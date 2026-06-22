@@ -410,7 +410,7 @@ Expected: PASS (4 tests)
 - [ ] **Step 6: Verify against the real export**
 
 Run: `uv run python -c "from maptap.parser import entries_from_text; import pathlib; print(len(entries_from_text(pathlib.Path('WhatsApp Chat with Map Tappers.txt').read_text())))"`
-Expected: prints `25`
+Expected: prints `22`
 
 - [ ] **Step 7: Commit**
 
@@ -639,7 +639,7 @@ Expected: PASS (1 test)
 - [ ] **Step 5: Import the real export**
 
 Run: `uv run python -m maptap.importer "WhatsApp Chat with Map Tappers.txt"`
-Expected: prints `Imported 25 entries into maptap.db`
+Expected: prints `Imported 22 entries into maptap.db`
 
 - [ ] **Step 6: Commit**
 

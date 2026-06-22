@@ -1,5 +1,6 @@
 import os
 import pathlib
+from contextlib import closing
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -22,27 +23,20 @@ def _conn():
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    conn = _conn()
-    rows = all_entries(conn)
-    conn.close()
-    return templates.TemplateResponse(
-        request, "index.html", {"entries": rows}
-    )
+    with closing(_conn()) as conn:
+        rows = all_entries(conn)
+    return templates.TemplateResponse(request, "index.html", {"entries": rows})
 
 
 @app.get("/players", response_class=HTMLResponse)
 def players(request: Request):
-    conn = _conn()
-    rows = player_summary(conn)
-    conn.close()
-    return templates.TemplateResponse(
-        request, "players.html", {"players": rows}
-    )
+    with closing(_conn()) as conn:
+        rows = player_summary(conn)
+    return templates.TemplateResponse(request, "players.html", {"players": rows})
 
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request):
-    conn = _conn()
-    rows = daily_leaderboard(conn)
-    conn.close()
+    with closing(_conn()) as conn:
+        rows = daily_leaderboard(conn)
     return templates.TemplateResponse(request, "days.html", {"days": rows})

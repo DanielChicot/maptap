@@ -35,5 +35,10 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    assert client.get("/players").status_code == 200
-    assert client.get("/days").status_code == 200
+    players_response = client.get("/players")
+    assert players_response.status_code == 200
+    assert "Finn Risdon" in players_response.text
+
+    days_response = client.get("/days")
+    assert days_response.status_code == 200
+    assert "Finn Risdon" in days_response.text

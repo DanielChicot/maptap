@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Map Tappers League</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 2rem; }
+        nav a { margin-right: 1rem; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { padding: .4rem .6rem; border-bottom: 1px solid #ddd; text-align: right; }
+        th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+        th[data-sort] { cursor: pointer; user-select: none; }
+        th[data-sort]:hover { background: #f0f0f0; }
+        caption { text-align: left; font-weight: bold; margin-bottom: .5rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">League</a>
+        <a href="/players">Players</a>
+        <a href="/days">By day</a>
+    </nav>
+    {% block content %}{% endblock %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

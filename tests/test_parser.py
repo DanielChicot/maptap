@@ -1,6 +1,20 @@
 import datetime
+import logging
+
+import pytest
 
 from maptap.parser import entries_from_text
+
+_TOO_FEW_ROUNDS = """\
+15/06/2026, 07:37 - Daniel Chicot: www.maptap.gg June 15
+100🎯 99🎯
+Final score: 199
+"""
+
+_NO_FINAL_SCORE = """\
+15/06/2026, 07:37 - Daniel Chicot: www.maptap.gg June 15
+100🎯 99🎯 98🎯 95🏅 86🌟
+"""
 
 
 def test_parses_all_scoring_messages(sample_export):
@@ -35,3 +49,13 @@ def test_handles_trailing_text_after_final_score(sample_export):
     )
     assert finn_20.maptap_score == 833
     assert finn_20.rounds[0].score == 4
+
+
+@pytest.mark.parametrize("malformed", [_TOO_FEW_ROUNDS, _NO_FINAL_SCORE])
+def test_malformed_message_warns_and_is_skipped(malformed, caplog):
+    with caplog.at_level(logging.WARNING, logger="maptap.parser"):
+        entries = entries_from_text(malformed)
+    assert entries == []
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert warnings[0].name == "maptap.parser"

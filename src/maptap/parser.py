@@ -14,6 +14,12 @@ _HEADER = re.compile(r"maptap\.gg", re.IGNORECASE)
 _ROUND = re.compile(r"(\d{1,3})(\D+)")
 _FINAL = re.compile(r"Final score:\s*(\d+)")
 
+_MONTHS = {
+    "january": 1, "february": 2, "march": 3, "april": 4,
+    "may": 5, "june": 6, "july": 7, "august": 8,
+    "september": 9, "october": 10, "november": 11, "december": 12,
+}
+
 
 def _messages(text):
     current = None
@@ -47,7 +53,7 @@ def _entry_from_message(match, lines):
         return None
 
     before_final = body[: final.start()]
-    score_blob = before_final.split("maptap.gg", 1)[1]
+    score_blob = re.split(r"maptap\.gg", before_final, maxsplit=1, flags=re.IGNORECASE)[1]
     score_blob = re.sub(r"^[^\n]*\n", "", score_blob, count=1)
     rounds = _parse_rounds(score_blob)
     if len(rounds) != 5:
@@ -58,7 +64,7 @@ def _entry_from_message(match, lines):
 
     header_line = before_final.splitlines()[0]
     date_match = re.search(r"maptap\.gg\s+([A-Za-z]+)\s+(\d{1,2})", header_line)
-    game_date = _game_date(date_match, msg_year, match)
+    game_date = _game_date(date_match, msg_year, match, sender)
 
     return Entry(
         player=sender,
@@ -68,12 +74,23 @@ def _entry_from_message(match, lines):
     )
 
 
-def _game_date(date_match, msg_year, msg_match):
+def _message_date(msg_match):
+    return datetime.date(
+        int(msg_match.group("year")),
+        int(msg_match.group("month")),
+        int(msg_match.group("day")),
+    )
+
+
+def _game_date(date_match, msg_year, msg_match, sender):
     if date_match is None:
-        return datetime.date(
-            msg_year, int(msg_match.group("month")), int(msg_match.group("day"))
+        return _message_date(msg_match)
+    month = _MONTHS.get(date_match.group(1).lower())
+    if month is None:
+        logger.warning(
+            "maptap message from %s had unrecognised month %r", sender, date_match.group(1)
         )
-    month = datetime.datetime.strptime(date_match.group(1), "%B").month
+        return _message_date(msg_match)
     return datetime.date(msg_year, month, int(date_match.group(2)))
 
 

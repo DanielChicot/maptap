@@ -1,7 +1,11 @@
+import datetime
 import pathlib
+
+import pytest
 
 from maptap.db import connect, upsert_entries
 from maptap.metrics import all_entries, daily_leaderboard, player_summary
+from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
 from tests.conftest import SAMPLE_EXPORT
 
@@ -42,8 +46,11 @@ def test_daily_leaderboard_ranks_per_day():
 
 
 def test_known_facts_from_full_export():
+    export_path = pathlib.Path(__file__).resolve().parent.parent / "WhatsApp Chat with Map Tappers.txt"
+    if not export_path.exists():
+        pytest.skip("real export not present")
     conn = connect()
-    text = pathlib.Path("WhatsApp Chat with Map Tappers.txt").read_text(encoding="utf-8")
+    text = export_path.read_text(encoding="utf-8")
     upsert_entries(conn, entries_from_text(text))
     rows = all_entries(conn)
 
@@ -53,3 +60,21 @@ def test_known_facts_from_full_export():
 
     four_hundred_entries = [r for r in rows if r["player"] == "Finn Risdon" and r["hundreds"] == 4]
     assert len(four_hundred_entries) == 2
+
+
+def _make_entry(player, maptap_score, game_date=datetime.date(2026, 6, 15)):
+    rounds = tuple(Round(score=100, emoji="🎯") for _ in range(5))
+    return Entry(player=player, game_date=game_date, maptap_score=maptap_score, rounds=rounds)
+
+
+def test_wins_tie_credits_both_players():
+    conn = connect()
+    upsert_entries(conn, [
+        _make_entry("Alice", 900),
+        _make_entry("Bob", 900),
+        _make_entry("Carol", 800),
+    ])
+    summary = {r["player"]: r for r in player_summary(conn)}
+    assert summary["Alice"]["wins"] == 1
+    assert summary["Bob"]["wins"] == 1
+    assert summary["Carol"]["wins"] == 0

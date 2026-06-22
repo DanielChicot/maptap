@@ -10,7 +10,7 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
         FROM entries e
         JOIN rounds r ON r.entry_id = e.id
         GROUP BY e.id
-        ORDER BY e.maptap_score DESC
+        ORDER BY e.maptap_score DESC, e.player ASC, e.game_date ASC
         """
     ).fetchall()
     result = []
@@ -88,7 +88,7 @@ def daily_leaderboard(conn: sqlite3.Connection) -> list[dict]:
         """
         SELECT game_date, player, maptap_score
         FROM entries
-        ORDER BY game_date DESC, maptap_score DESC
+        ORDER BY game_date DESC, maptap_score DESC, player ASC
         """
     ).fetchall()
     by_day: dict[str, list[dict]] = {}

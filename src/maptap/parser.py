@@ -13,6 +13,7 @@ _MESSAGE = re.compile(
 _HEADER = re.compile(r"maptap\.gg", re.IGNORECASE)
 _ROUND = re.compile(r"(\d{1,3})(\D+)")
 _FINAL = re.compile(r"Final score:\s*(\d+)")
+_DATE_IN_HEADER = re.compile(r"maptap\.gg\s+([A-Za-z]+)\s+(\d{1,2})", re.IGNORECASE)
 
 _MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4,
@@ -53,8 +54,11 @@ def _entry_from_message(match, lines):
         return None
 
     before_final = body[: final.start()]
-    score_blob = re.split(r"maptap\.gg", before_final, maxsplit=1, flags=re.IGNORECASE)[1]
-    score_blob = re.sub(r"^[^\n]*\n", "", score_blob, count=1)
+    parts = _HEADER.split(before_final, maxsplit=1)
+    if len(parts) < 2:
+        logger.warning("maptap message from %s missing maptap.gg header", sender)
+        return None
+    score_blob = re.sub(r"^[^\n]*\n", "", parts[1], count=1)
     rounds = _parse_rounds(score_blob)
     if len(rounds) != 5:
         logger.warning(
@@ -63,7 +67,7 @@ def _entry_from_message(match, lines):
         return None
 
     header_line = before_final.splitlines()[0]
-    date_match = re.search(r"maptap\.gg\s+([A-Za-z]+)\s+(\d{1,2})", header_line)
+    date_match = _DATE_IN_HEADER.search(header_line)
     game_date = _game_date(date_match, msg_year, match, sender)
 
     return Entry(

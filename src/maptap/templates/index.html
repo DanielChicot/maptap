@@ -6,12 +6,19 @@
 <table id="league">
     <thead>
         <tr>
-            <th>Player</th>
-            <th>Date</th>
-            <th data-sort="number">MapTap</th>
-            <th data-sort="number">Cumulative</th>
-            <th data-sort="number">#100s</th>
-            <th>Rounds</th>
+            <th rowspan="2">Player</th>
+            <th rowspan="2">Date</th>
+            <th rowspan="2" data-sort="number">MapTap</th>
+            <th rowspan="2" data-sort="number">Cumulative</th>
+            <th rowspan="2" data-sort="number">#100s</th>
+            <th class="rounds-group" colspan="5">Rounds</th>
+        </tr>
+        <tr>
+            <th class="round">1</th>
+            <th class="round">2</th>
+            <th class="round">3</th>
+            <th class="round">4</th>
+            <th class="round">5</th>
         </tr>
     </thead>
     <tbody>
@@ -22,7 +29,7 @@
             <td>{{ e.maptap_score }}</td>
             <td>{{ e.cumulative }}</td>
             <td>{{ e.hundreds }}</td>
-            <td>{{ e.rounds | join(" ") }}</td>
+            {% for r in e.rounds %}<td class="round">{{ r }}</td>{% endfor %}
         </tr>
         {% endfor %}
     </tbody>

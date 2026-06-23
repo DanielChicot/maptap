@@ -1,0 +1,11 @@
+services:
+  - name: maptap
+    type: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeployTrigger: commit
+    healthCheckPath: /
+    envVars:
+      - key: MAPTAP_DB
+        value: /app/maptap.db

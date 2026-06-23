@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
 .venv/
-maptap.db
+.superpowers/
 _whatsapp_extract/

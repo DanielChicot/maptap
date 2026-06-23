@@ -1,0 +1,104 @@
+import sqlite3
+
+
+def all_entries(conn: sqlite3.Connection) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT e.id, e.player, e.game_date, e.maptap_score,
+               SUM(r.score) AS cumulative,
+               SUM(CASE WHEN r.score = 100 THEN 1 ELSE 0 END) AS hundreds
+        FROM entries e
+        JOIN rounds r ON r.entry_id = e.id
+        GROUP BY e.id
+        ORDER BY e.maptap_score DESC, e.player ASC, e.game_date ASC
+        """
+    ).fetchall()
+    result = []
+    for row in rows:
+        rounds = conn.execute(
+            "SELECT score FROM rounds WHERE entry_id = ? ORDER BY idx", (row["id"],)
+        ).fetchall()
+        result.append(
+            {
+                "player": row["player"],
+                "game_date": row["game_date"],
+                "maptap_score": row["maptap_score"],
+                "cumulative": row["cumulative"],
+                "hundreds": row["hundreds"],
+                "rounds": [r["score"] for r in rounds],
+            }
+        )
+    return result
+
+
+def player_summary(conn: sqlite3.Connection) -> list[dict]:
+    base = conn.execute(
+        """
+        SELECT e.player,
+               MAX(e.maptap_score) AS best,
+               SUM(e.maptap_score) AS total_maptap,
+               SUM(r_sum.cumulative) AS total_cumulative,
+               SUM(r_sum.hundreds) AS total_hundreds,
+               COUNT(*) AS days_played
+        FROM entries e
+        JOIN (
+            SELECT entry_id,
+                   SUM(score) AS cumulative,
+                   SUM(CASE WHEN score = 100 THEN 1 ELSE 0 END) AS hundreds
+            FROM rounds GROUP BY entry_id
+        ) r_sum ON r_sum.entry_id = e.id
+        GROUP BY e.player
+        ORDER BY total_maptap DESC
+        """
+    ).fetchall()
+
+    wins = _wins_by_player(conn)
+    return [
+        {
+            "player": row["player"],
+            "best": row["best"],
+            "total_maptap": row["total_maptap"],
+            "total_cumulative": row["total_cumulative"],
+            "total_hundreds": row["total_hundreds"],
+            "days_played": row["days_played"],
+            "wins": wins.get(row["player"], 0),
+        }
+        for row in base
+    ]
+
+
+def _wins_by_player(conn: sqlite3.Connection) -> dict[str, int]:
+    rows = conn.execute(
+        """
+        SELECT player FROM entries e
+        WHERE e.maptap_score = (
+            SELECT MAX(maptap_score) FROM entries e2
+            WHERE e2.game_date = e.game_date
+        )
+        """
+    ).fetchall()
+    counts: dict[str, int] = {}
+    for row in rows:
+        counts[row["player"]] = counts.get(row["player"], 0) + 1
+    return counts
+
+
+def daily_leaderboard(conn: sqlite3.Connection) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT game_date, player, maptap_score
+        FROM entries
+        ORDER BY game_date DESC, maptap_score DESC, player ASC
+        """
+    ).fetchall()
+    by_day: dict[str, list[dict]] = {}
+    for row in rows:
+        standings = by_day.setdefault(row["game_date"], [])
+        standings.append(
+            {
+                "position": len(standings) + 1,
+                "player": row["player"],
+                "maptap_score": row["maptap_score"],
+            }
+        )
+    return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]

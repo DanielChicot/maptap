@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}League · Map Tappers{% endblock %}
+{% block content %}
+<h1>Map Tappers — All-time league</h1>
+<p>Click a column header to sort.</p>
+<table id="league">
+    <thead>
+        <tr>
+            <th>Player</th>
+            <th>Date</th>
+            <th data-sort="number">MapTap</th>
+            <th data-sort="number">Cumulative</th>
+            <th data-sort="number">#100s</th>
+            <th>Rounds</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in entries %}
+        <tr>
+            <td>{{ e.player }}</td>
+            <td>{{ e.game_date }}</td>
+            <td>{{ e.maptap_score }}</td>
+            <td>{{ e.cumulative }}</td>
+            <td>{{ e.hundreds }}</td>
+            <td>{{ e.rounds | join(" ") }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+{% block scripts %}
+<script src="/static/sort.js"></script>
+{% endblock %}

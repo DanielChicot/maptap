@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}By day · Map Tappers{% endblock %}
+{% block content %}
+<h1>By day</h1>
+{% for day in days %}
+<table>
+    <caption>{{ day.game_date }}</caption>
+    <thead><tr><th>Pos</th><th>Player</th><th>MapTap</th></tr></thead>
+    <tbody>
+        {% for s in day.standings %}
+        <tr><td>{{ s.position }}</td><td>{{ s.player }}</td><td>{{ s.maptap_score }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endfor %}
+{% endblock %}

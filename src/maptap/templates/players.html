@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Players · Map Tappers{% endblock %}
+{% block content %}
+<h1>Player summary</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Player</th><th>Best</th><th>Total MapTap</th>
+            <th>Total Cumulative</th><th>Total #100s</th>
+            <th>Days</th><th>Wins</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in players %}
+        <tr>
+            <td>{{ p.player }}</td>
+            <td>{{ p.best }}</td>
+            <td>{{ p.total_maptap }}</td>
+            <td>{{ p.total_cumulative }}</td>
+            <td>{{ p.total_hundreds }}</td>
+            <td>{{ p.days_played }}</td>
+            <td>{{ p.wins }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

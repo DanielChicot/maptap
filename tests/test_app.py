@@ -100,3 +100,17 @@ def test_players_page_has_podium(tmp_path, monkeypatch):
     assert "podium" in response.text
     assert "rank-1" in response.text
     assert "rank-2" in response.text
+
+
+def test_days_page_has_day_cards(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert "day-grid" in response.text
+    assert "medal-1" in response.text
+    assert "2026-06-20" in response.text

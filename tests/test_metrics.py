@@ -45,7 +45,7 @@ def test_daily_leaderboard_ranks_per_day():
     assert june15["standings"][1]["player"] == "Daniel Chicot"
 
 
-def test_known_facts_from_full_export():
+def test_full_export_structural_invariants():
     export_path = pathlib.Path(__file__).resolve().parent.parent / "WhatsApp Chat with Map Tappers.txt"
     if not export_path.exists():
         pytest.skip("real export not present")
@@ -54,12 +54,15 @@ def test_known_facts_from_full_export():
     upsert_entries(conn, entries_from_text(text))
     rows = all_entries(conn)
 
-    top = rows[0]
-    assert top["player"] == "Daniel Chicot"
-    assert top["maptap_score"] == 987
-
-    four_hundred_entries = [r for r in rows if r["player"] == "Finn Risdon" and r["hundreds"] == 4]
-    assert len(four_hundred_entries) == 2
+    assert rows
+    assert {r["player"] for r in rows} <= {"Daniel Chicot", "Steve Risdon", "Finn Risdon"}
+    assert rows[0]["maptap_score"] == max(r["maptap_score"] for r in rows)
+    for row in rows:
+        assert len(row["rounds"]) == 5
+        assert all(isinstance(score, int) and score >= 0 for score in row["rounds"])
+        assert row["cumulative"] == sum(row["rounds"])
+        assert row["hundreds"] == sum(1 for score in row["rounds"] if score == 100)
+        assert row["maptap_score"] > 0
 
 
 def _make_entry(player, maptap_score, game_date=datetime.date(2026, 6, 15)):

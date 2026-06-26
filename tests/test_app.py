@@ -72,3 +72,17 @@ def test_index_hero_shows_leader(tmp_path, monkeypatch):
     response = client.get("/")
     assert "Finn Risdon" in response.text
     assert "1788" in response.text
+
+
+def test_league_has_player_filter_chips(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/")
+    assert 'class="chip' in response.text
+    assert 'data-player="Finn Risdon"' in response.text
+    assert 'data-player="all"' in response.text

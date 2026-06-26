@@ -4,7 +4,7 @@ import pathlib
 import pytest
 
 from maptap.db import connect, upsert_entries
-from maptap.metrics import all_entries, daily_leaderboard, player_summary
+from maptap.metrics import all_entries, daily_leaderboard, hero_stats, player_summary
 from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
 from tests.conftest import SAMPLE_EXPORT
@@ -78,3 +78,25 @@ def test_wins_tie_credits_both_players():
     assert summary["Alice"]["wins"] == 1
     assert summary["Bob"]["wins"] == 1
     assert summary["Carol"]["wins"] == 0
+
+
+def test_hero_stats_over_sample_export():
+    stats = hero_stats(_conn())
+    assert stats["days_tracked"] == 3
+    assert stats["highest_maptap"] == 955
+    assert stats["highest_maptap_player"] == "Finn Risdon"
+    assert stats["leader"] == "Finn Risdon"
+    assert stats["leader_total"] == 1788
+    assert stats["total_hundreds"] == 6
+
+
+def test_hero_stats_empty_database():
+    stats = hero_stats(connect())
+    assert stats == {
+        "days_tracked": 0,
+        "highest_maptap": None,
+        "highest_maptap_player": None,
+        "leader": None,
+        "leader_total": None,
+        "total_hundreds": 0,
+    }

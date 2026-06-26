@@ -102,3 +102,32 @@ def daily_leaderboard(conn: sqlite3.Connection) -> list[dict]:
             }
         )
     return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]
+
+
+def hero_stats(conn: sqlite3.Connection) -> dict:
+    days_tracked = conn.execute(
+        "SELECT COUNT(DISTINCT game_date) AS n FROM entries"
+    ).fetchone()["n"]
+
+    highest = conn.execute(
+        "SELECT player, maptap_score FROM entries "
+        "ORDER BY maptap_score DESC, player ASC LIMIT 1"
+    ).fetchone()
+
+    leader = conn.execute(
+        "SELECT player, SUM(maptap_score) AS total FROM entries "
+        "GROUP BY player ORDER BY total DESC, player ASC LIMIT 1"
+    ).fetchone()
+
+    total_hundreds = conn.execute(
+        "SELECT COUNT(*) AS n FROM rounds WHERE score = 100"
+    ).fetchone()["n"]
+
+    return {
+        "days_tracked": days_tracked,
+        "highest_maptap": highest["maptap_score"] if highest else None,
+        "highest_maptap_player": highest["player"] if highest else None,
+        "leader": leader["player"] if leader else None,
+        "leader_total": leader["total"] if leader else None,
+        "total_hundreds": total_hundreds,
+    }

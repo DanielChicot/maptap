@@ -1,39 +1,53 @@
 {% extends "base.html" %}
 {% block title %}League · Map Tappers{% endblock %}
 {% block content %}
-<h1>Map Tappers — All-time league</h1>
-<p>Click a column header to sort.</p>
-<table id="league">
-    <thead>
-        <tr>
-            <th rowspan="2" data-sort="text">Player</th>
-            <th rowspan="2" data-sort="text">Date</th>
-            <th rowspan="2" data-sort="number" data-sorted="desc">MapTap</th>
-            <th rowspan="2" data-sort="number">Cumulative</th>
-            <th rowspan="2" data-sort="number">#100s</th>
-            <th class="rounds-group" colspan="5">Rounds</th>
-        </tr>
-        <tr>
-            <th class="round">1</th>
-            <th class="round">2</th>
-            <th class="round">3</th>
-            <th class="round">4</th>
-            <th class="round">5</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for e in entries %}
-        <tr>
-            <td>{{ e.player }}</td>
-            <td>{{ e.game_date }}</td>
-            <td>{{ e.maptap_score }}</td>
-            <td>{{ e.cumulative }}</td>
-            <td>{{ e.hundreds }}</td>
-            {% for r in e.rounds %}<td class="round">{{ r }}</td>{% endfor %}
-        </tr>
+{% set player_names = entries | map(attribute='player') | unique | sort | list %}
+<h2 class="section-head">All-time league</h2>
+<p class="section-sub">Every entry, sortable by any column. Filter by player below.</p>
+
+<div class="panel toolbar">
+    <div class="chips">
+        <button class="chip active" data-player="all">All</button>
+        {% for name in player_names %}
+        <button class="chip" data-player="{{ name }}">{{ name }}</button>
         {% endfor %}
-    </tbody>
-</table>
+    </div>
+    <span class="results-meta" id="resultsMeta">{{ entries | length }} entries</span>
+</div>
+
+<div class="panel table-card">
+    <table id="league">
+        <thead>
+            <tr>
+                <th class="txt" rowspan="2" data-sort="text">Player</th>
+                <th class="txt" rowspan="2" data-sort="text">Date</th>
+                <th class="num" rowspan="2" data-sort="number" data-sorted="desc">MapTap</th>
+                <th class="num" rowspan="2" data-sort="number">Cumulative</th>
+                <th class="num" rowspan="2" data-sort="number">#100s</th>
+                <th class="rounds-group" colspan="5">Rounds</th>
+            </tr>
+            <tr>
+                <th class="round">1</th>
+                <th class="round">2</th>
+                <th class="round">3</th>
+                <th class="round">4</th>
+                <th class="round">5</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in entries %}
+            <tr data-player="{{ e.player }}">
+                <td class="txt">{{ e.player }}</td>
+                <td class="txt num">{{ e.game_date }}</td>
+                <td class="num">{{ e.maptap_score }}</td>
+                <td class="num">{{ e.cumulative }}</td>
+                <td class="num">{{ e.hundreds }}</td>
+                {% for r in e.rounds %}<td class="round num">{{ r }}</td>{% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="/static/sort.js"></script>

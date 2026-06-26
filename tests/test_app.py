@@ -42,3 +42,75 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     days_response = client.get("/days")
     assert days_response.status_code == 200
     assert "Finn Risdon" in days_response.text
+
+
+def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    for path in ("/", "/players", "/days"):
+        response = client.get(path)
+        assert response.status_code == 200
+        assert "MAP" in response.text
+        assert "TAPPERS" in response.text
+        assert "/static/styles.css" in response.text
+        assert "/static/theme.js" in response.text
+
+
+def test_index_hero_shows_leader(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/")
+    assert "Finn Risdon" in response.text
+    assert "1788" in response.text
+
+
+def test_league_has_player_filter_chips(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/")
+    assert 'class="chip' in response.text
+    assert 'data-player="Finn Risdon"' in response.text
+    assert 'data-player="all"' in response.text
+
+
+def test_players_page_has_podium(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/players")
+    assert "podium" in response.text
+    assert "rank-1" in response.text
+    assert "rank-2" in response.text
+
+
+def test_days_page_has_day_cards(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert "day-grid" in response.text
+    assert "medal-1" in response.text
+    assert "2026-06-20" in response.text

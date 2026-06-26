@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from maptap.db import connect
-from maptap.metrics import all_entries, daily_leaderboard, player_summary
+from maptap.metrics import all_entries, daily_leaderboard, hero_stats, player_summary
 
 _BASE = pathlib.Path(__file__).parent
 templates = Jinja2Templates(directory=str(_BASE / "templates"))
@@ -24,19 +24,19 @@ def _conn():
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     with closing(_conn()) as conn:
-        rows = all_entries(conn)
-    return templates.TemplateResponse(request, "index.html", {"entries": rows})
+        context = {"entries": all_entries(conn), "stats": hero_stats(conn), "active": "league"}
+    return templates.TemplateResponse(request, "index.html", context)
 
 
 @app.get("/players", response_class=HTMLResponse)
 def players(request: Request):
     with closing(_conn()) as conn:
-        rows = player_summary(conn)
-    return templates.TemplateResponse(request, "players.html", {"players": rows})
+        context = {"players": player_summary(conn), "stats": hero_stats(conn), "active": "players"}
+    return templates.TemplateResponse(request, "players.html", context)
 
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request):
     with closing(_conn()) as conn:
-        rows = daily_leaderboard(conn)
-    return templates.TemplateResponse(request, "days.html", {"days": rows})
+        context = {"days": daily_leaderboard(conn), "stats": hero_stats(conn), "active": "days"}
+    return templates.TemplateResponse(request, "days.html", context)

@@ -1,30 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB" data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Map Tappers League{% endblock %}</title>
-    <style>
-        body { font-family: system-ui, sans-serif; margin: 2rem; }
-        nav a { margin-right: 1rem; }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { padding: .4rem .6rem; border-bottom: 1px solid #ddd; text-align: right; }
-        th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
-        th[data-sort] { cursor: pointer; user-select: none; }
-        th[data-sort]:hover { background: #f0f0f0; }
-        caption { text-align: left; font-weight: bold; margin-bottom: .5rem; }
-        th.rounds-group { text-align: center; }
-        .sort-arrow { font-size: .8em; color: #4338ca; }
-        th.round, td.round { text-align: right; width: 2.5em; padding-left: .35rem; padding-right: .35rem; font-variant-numeric: tabular-nums; }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/theme.js" defer></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/">League</a>
-        <a href="/players">Players</a>
-        <a href="/days">By day</a>
+    <nav class="nav">
+        <div class="wrap nav-inner">
+            <div class="brand">
+                <span class="dot"></span>
+                <span>MAP&nbsp;TAPPERS<small>maptap.gg league</small></span>
+            </div>
+            <div class="tabs">
+                <a class="tab {{ 'active' if active == 'league' else '' }}" href="/">League</a>
+                <a class="tab {{ 'active' if active == 'players' else '' }}" href="/players">Players</a>
+                <a class="tab {{ 'active' if active == 'days' else '' }}" href="/days">Days</a>
+            </div>
+            <button class="theme-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">◑</button>
+        </div>
     </nav>
-    {% block content %}{% endblock %}
+
+    <header class="hero">
+        <div class="wrap">
+            <span class="hero-tag">maptap.gg · daily league</span>
+            <h1><span class="out">Map</span> <span class="em">Tappers</span></h1>
+            <p class="hero-sub">Three players, five rounds a day. Every score from the group chat, ranked and totted up.</p>
+            <div class="stat-row">
+                <div class="stat">
+                    <div class="label">Days tracked</div>
+                    <div class="value">{{ stats.days_tracked }}</div>
+                    <div class="sub">in the league</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Highest MapTap</div>
+                    <div class="value">{{ stats.highest_maptap if stats.highest_maptap is not none else '—' }}</div>
+                    <div class="sub">{{ stats.highest_maptap_player or '—' }}</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Leader</div>
+                    <div class="value" style="font-size:22px">{{ stats.leader or '—' }}</div>
+                    <div class="sub">{{ stats.leader_total if stats.leader_total is not none else '—' }} total MapTap</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Total 100s</div>
+                    <div class="value">{{ stats.total_hundreds }}</div>
+                    <div class="sub">perfect rounds</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        {% block content %}{% endblock %}
+    </main>
     {% block scripts %}{% endblock %}
 </body>
 </html>

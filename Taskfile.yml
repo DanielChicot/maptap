@@ -1,0 +1,49 @@
+version: '3'
+
+vars:
+  REMOTE: 'gdrive:'
+  PATTERN: 'Map Tappers'
+  WORKDIR: /tmp/maptap-pull
+  DB: maptap.db
+
+tasks:
+  default:
+    desc: List available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  fetch:
+    desc: Download the newest WhatsApp export zip from Google Drive and extract it
+    cmds:
+      - mkdir -p {{.WORKDIR}}
+      - |
+        set -e
+        id=$(rclone lsf {{.REMOTE}} --files-only --format "tip" --separator "|" | grep "{{.PATTERN}}" | sort -r | head -1 | cut -d'|' -f2)
+        test -n "$id" || { echo "No export matching '{{.PATTERN}}' found in {{.REMOTE}}"; exit 1; }
+        rclone backend copyid {{.REMOTE}} "$id" {{.WORKDIR}}/chat.zip
+      - unzip -o {{.WORKDIR}}/chat.zip -d {{.WORKDIR}}
+
+  import:
+    desc: Import the extracted chat into the SQLite database
+    cmds:
+      - uv run python -m maptap.importer {{.WORKDIR}}/*.txt --db {{.DB}}
+
+  publish:
+    desc: Commit and push the updated database (triggers Render redeploy)
+    cmds:
+      - |
+        git add {{.DB}}
+        if git diff --cached --quiet; then
+          echo "No database changes to publish."
+        else
+          git commit -m "scores via daily import"
+          git push
+        fi
+
+  update:
+    desc: Pull newest export, import it, and publish in one go
+    cmds:
+      - task: fetch
+      - task: import
+      - task: publish

@@ -51,6 +51,12 @@ def test_hero_stats_cumulative_leader():
     assert stats["cumulative_leader_total"] == 862
 
 
+def test_hero_stats_highest_cumulative():
+    stats = hero_stats(_conn())
+    assert stats["highest_cumulative"] == 485
+    assert stats["highest_cumulative_player"] == "Finn Risdon"
+
+
 def test_daily_leaderboard_includes_cumulative():
     days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
     june15 = days["2026-06-15"]
@@ -179,5 +185,7 @@ def test_hero_stats_empty_database():
         "leader_total": None,
         "cumulative_leader": None,
         "cumulative_leader_total": None,
+        "highest_cumulative": None,
+        "highest_cumulative_player": None,
         "total_hundreds": 0,
     }

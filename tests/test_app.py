@@ -44,6 +44,35 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     assert "Finn Risdon" in days_response.text
 
 
+def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert response.status_code == 200
+    assert ">485<" in response.text  # Finn's June 15 cumulative
+    assert ">478<" in response.text  # Dan's June 15 cumulative
+    assert 'href="/days?sort=maptap"' in response.text
+    assert 'href="/days"' in response.text
+
+
+def test_days_sort_by_maptap(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days?sort=maptap")
+    assert response.status_code == 200
+    assert "Finn Risdon" in response.text
+
+
 def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

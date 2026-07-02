@@ -36,7 +36,14 @@ def players(request: Request):
 
 
 @app.get("/days", response_class=HTMLResponse)
-def days(request: Request):
+def days(request: Request, sort: str = "cumulative"):
+    if sort not in ("cumulative", "maptap"):
+        sort = "cumulative"
     with closing(_conn()) as conn:
-        context = {"days": daily_leaderboard(conn), "stats": hero_stats(conn), "active": "days"}
+        context = {
+            "days": daily_leaderboard(conn, sort=sort),
+            "stats": hero_stats(conn),
+            "active": "days",
+            "sort": sort,
+        }
     return templates.TemplateResponse(request, "days.html", context)

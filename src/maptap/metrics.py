@@ -83,12 +83,19 @@ def _wins_by_player(conn: sqlite3.Connection) -> dict[str, int]:
     return counts
 
 
-def daily_leaderboard(conn: sqlite3.Connection) -> list[dict]:
+def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> list[dict]:
+    sort_column = {
+        "cumulative": "cumulative DESC, e.maptap_score",
+        "maptap": "e.maptap_score DESC, cumulative",
+    }[sort]
     rows = conn.execute(
-        """
-        SELECT game_date, player, maptap_score
-        FROM entries
-        ORDER BY game_date DESC, maptap_score DESC, player ASC
+        f"""
+        SELECT e.game_date, e.player, e.maptap_score,
+               SUM(r.score) AS cumulative
+        FROM entries e
+        JOIN rounds r ON r.entry_id = e.id
+        GROUP BY e.id
+        ORDER BY e.game_date DESC, {sort_column} DESC, e.player ASC
         """
     ).fetchall()
     by_day: dict[str, list[dict]] = {}
@@ -99,6 +106,7 @@ def daily_leaderboard(conn: sqlite3.Connection) -> list[dict]:
                 "position": len(standings) + 1,
                 "player": row["player"],
                 "maptap_score": row["maptap_score"],
+                "cumulative": row["cumulative"],
             }
         )
     return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]

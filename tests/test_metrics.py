@@ -45,6 +45,76 @@ def test_daily_leaderboard_ranks_per_day():
     assert june15["standings"][1]["player"] == "Daniel Chicot"
 
 
+def test_daily_leaderboard_includes_cumulative():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["cumulative"] == 485
+    assert june15["standings"][1]["cumulative"] == 478
+
+
+def _split_winner_conn():
+    conn = connect()
+    upsert_entries(
+        conn,
+        [
+            Entry(
+                "MapTap Ace",
+                datetime.date(2026, 6, 21),
+                900,
+                tuple(Round(s, "🎯") for s in (80, 80, 80, 80, 80)),
+            ),
+            Entry(
+                "Cume Ace",
+                datetime.date(2026, 6, 21),
+                800,
+                tuple(Round(s, "🎯") for s in (90, 90, 90, 90, 90)),
+            ),
+        ],
+    )
+    return conn
+
+
+@pytest.mark.parametrize(
+    ("sort", "expected_order"),
+    [
+        ("cumulative", ["Cume Ace", "MapTap Ace"]),
+        ("maptap", ["MapTap Ace", "Cume Ace"]),
+    ],
+)
+def test_daily_leaderboard_sort_order(sort, expected_order):
+    days = daily_leaderboard(_split_winner_conn(), sort=sort)
+    assert [s["player"] for s in days[0]["standings"]] == expected_order
+    assert [s["position"] for s in days[0]["standings"]] == [1, 2]
+
+
+def test_daily_leaderboard_cumulative_ties_break_on_maptap():
+    conn = connect()
+    upsert_entries(
+        conn,
+        [
+            Entry(
+                "Aaron Alphabetical",
+                datetime.date(2026, 6, 21),
+                840,
+                tuple(Round(s, "🎯") for s in (90, 90, 90, 90, 90)),
+            ),
+            Entry(
+                "Zoe Zenith",
+                datetime.date(2026, 6, 21),
+                864,
+                tuple(Round(s, "🎯") for s in (90, 90, 90, 90, 90)),
+            ),
+        ],
+    )
+    days = daily_leaderboard(conn)
+    assert [s["player"] for s in days[0]["standings"]] == ["Zoe Zenith", "Aaron Alphabetical"]
+
+
+def test_daily_leaderboard_defaults_to_cumulative_order():
+    days = daily_leaderboard(_split_winner_conn())
+    assert days[0]["standings"][0]["player"] == "Cume Ace"
+
+
 def test_full_export_structural_invariants():
     export_path = pathlib.Path(__file__).resolve().parent.parent / "WhatsApp Chat with Map Tappers.txt"
     if not export_path.exists():

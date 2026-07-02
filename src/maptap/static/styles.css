@@ -123,7 +123,9 @@ main.wrap { padding-top: 6px; padding-bottom: 60px; }
   font: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
   color: var(--ink-dim); background: var(--bg-3); border: 1px solid var(--line);
   padding: 7px 14px; border-radius: 999px; transition: color 0.15s, background 0.15s;
+  text-decoration: none;
 }
+.chip-label { color: var(--ink-faint); font-size: 13px; align-self: center; }
 .chip:hover { color: var(--ink); }
 .chip.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .results-meta { margin-left: auto; color: var(--ink-faint); font-size: 13px; }

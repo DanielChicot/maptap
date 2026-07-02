@@ -51,17 +51,22 @@
 
   const chips = Array.from(document.querySelectorAll(".chip[data-player]"));
   const meta = document.getElementById("resultsMeta");
+  const applyFilter = () => {
+    const active = new Set(
+      chips.filter((c) => c.classList.contains("active")).map((c) => c.dataset.player)
+    );
+    let shown = 0;
+    Array.from(tbody.rows).forEach((row) => {
+      const match = active.has(row.dataset.player);
+      row.classList.toggle("hidden", !match);
+      if (match) shown += 1;
+    });
+    if (meta) meta.textContent = shown + " entries";
+  };
   chips.forEach((chip) => {
     chip.addEventListener("click", () => {
-      const want = chip.dataset.player;
-      chips.forEach((c) => c.classList.toggle("active", c === chip));
-      let shown = 0;
-      Array.from(tbody.rows).forEach((row) => {
-        const match = want === "all" || row.dataset.player === want;
-        row.classList.toggle("hidden", !match);
-        if (match) shown += 1;
-      });
-      if (meta) meta.textContent = shown + " entries";
+      chip.classList.toggle("active");
+      applyFilter();
     });
   });
 })();

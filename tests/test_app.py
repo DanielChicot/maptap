@@ -112,9 +112,9 @@ def test_league_has_player_filter_chips(tmp_path, monkeypatch):
 
     client = TestClient(app)
     response = client.get("/")
-    assert 'class="chip' in response.text
-    assert 'data-player="Finn Risdon"' in response.text
-    assert 'data-player="all"' in response.text
+    assert 'data-player="all"' not in response.text
+    for name in ("Daniel Chicot", "Finn Risdon", "Steve Risdon"):
+        assert f'class="chip active" data-player="{name}"' in response.text
 
 
 def test_players_page_has_podium(tmp_path, monkeypatch):

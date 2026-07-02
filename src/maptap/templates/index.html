@@ -7,9 +7,8 @@
 
 <div class="panel toolbar">
     <div class="chips">
-        <button class="chip active" data-player="all">All</button>
         {% for name in player_names %}
-        <button class="chip" data-player="{{ name }}">{{ name }}</button>
+        <button class="chip active" data-player="{{ name }}">{{ name }}</button>
         {% endfor %}
     </div>
     <span class="results-meta" id="resultsMeta">{{ entries | length }} entries</span>

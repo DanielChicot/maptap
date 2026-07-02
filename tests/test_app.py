@@ -101,6 +101,8 @@ def test_index_hero_shows_leader(tmp_path, monkeypatch):
     response = client.get("/")
     assert "Finn Risdon" in response.text
     assert "1788" in response.text
+    assert "Cumulative Leader" in response.text
+    assert "862 total cumulative" in response.text
 
 
 def test_league_has_player_filter_chips(tmp_path, monkeypatch):

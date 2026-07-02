@@ -127,6 +127,14 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
         "GROUP BY player ORDER BY total DESC, player ASC LIMIT 1"
     ).fetchone()
 
+    cumulative_leader = conn.execute(
+        """
+        SELECT e.player, SUM(r.score) AS total
+        FROM entries e JOIN rounds r ON r.entry_id = e.id
+        GROUP BY e.player ORDER BY total DESC, e.player ASC LIMIT 1
+        """
+    ).fetchone()
+
     total_hundreds = conn.execute(
         "SELECT COUNT(*) AS n FROM rounds WHERE score = 100"
     ).fetchone()["n"]
@@ -137,5 +145,7 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
         "highest_maptap_player": highest["player"] if highest else None,
         "leader": leader["player"] if leader else None,
         "leader_total": leader["total"] if leader else None,
+        "cumulative_leader": cumulative_leader["player"] if cumulative_leader else None,
+        "cumulative_leader_total": cumulative_leader["total"] if cumulative_leader else None,
         "total_hundreds": total_hundreds,
     }

@@ -45,6 +45,12 @@ def test_daily_leaderboard_ranks_per_day():
     assert june15["standings"][1]["player"] == "Daniel Chicot"
 
 
+def test_hero_stats_cumulative_leader():
+    stats = hero_stats(_conn())
+    assert stats["cumulative_leader"] == "Finn Risdon"
+    assert stats["cumulative_leader_total"] == 862
+
+
 def test_daily_leaderboard_includes_cumulative():
     days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
     june15 = days["2026-06-15"]
@@ -171,5 +177,7 @@ def test_hero_stats_empty_database():
         "highest_maptap_player": None,
         "leader": None,
         "leader_total": None,
+        "cumulative_leader": None,
+        "cumulative_leader_total": None,
         "total_hundreds": 0,
     }

@@ -42,9 +42,14 @@
                     <div class="sub">{{ stats.highest_maptap_player or '—' }}</div>
                 </div>
                 <div class="stat">
-                    <div class="label">Leader</div>
+                    <div class="label">MapTap Leader</div>
                     <div class="value" style="font-size:22px">{{ stats.leader or '—' }}</div>
                     <div class="sub">{{ stats.leader_total if stats.leader_total is not none else '—' }} total MapTap</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Cumulative Leader</div>
+                    <div class="value" style="font-size:22px">{{ stats.cumulative_leader or '—' }}</div>
+                    <div class="sub">{{ stats.cumulative_leader_total if stats.cumulative_leader_total is not none else '—' }} total cumulative</div>
                 </div>
                 <div class="stat">
                     <div class="label">Total 100s</div>

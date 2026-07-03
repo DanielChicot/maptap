@@ -2,15 +2,15 @@
 {% block title %}Players · Map Tappers{% endblock %}
 {% block content %}
 <h2 class="section-head">Players</h2>
-<p class="section-sub">Ranked by total MapTap across every day played.</p>
+<p class="section-sub">Ranked by total cumulative across every day played.</p>
 
 <div class="podium">
     {% for p in players[:3] %}
     <div class="panel podium-place rank-{{ loop.index }}">
         <div class="rank">#{{ loop.index }}</div>
         <div class="who">{{ p.player }}</div>
-        <div class="big num">{{ p.total_maptap }}</div>
-        <div class="meta">{{ p.wins }} wins · best {{ p.best }} · {{ p.days_played }} days</div>
+        <div class="big num">{{ p.total_cumulative }}</div>
+        <div class="meta">{{ p.wins }} wins · best {{ p.best }} · {{ p.total_hundreds }} ×100s · {{ p.days_played }} days</div>
     </div>
     {% endfor %}
 </div>

@@ -49,7 +49,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             FROM rounds GROUP BY entry_id
         ) r_sum ON r_sum.entry_id = e.id
         GROUP BY e.player
-        ORDER BY total_maptap DESC
+        ORDER BY total_cumulative DESC
         """
     ).fetchall()
 

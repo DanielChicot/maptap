@@ -135,6 +135,11 @@ def test_daily_leaderboard_cumulative_ties_break_on_maptap():
     assert [s["player"] for s in days[0]["standings"]] == ["Zoe Zenith", "Aaron Alphabetical"]
 
 
+def test_player_summary_ranked_by_total_cumulative():
+    players = [r["player"] for r in player_summary(_split_winner_conn())]
+    assert players == ["Cume Ace", "MapTap Ace"]
+
+
 def test_daily_leaderboard_defaults_to_cumulative_order():
     days = daily_leaderboard(_split_winner_conn())
     assert days[0]["standings"][0]["player"] == "Cume Ace"

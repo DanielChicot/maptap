@@ -38,6 +38,8 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     players_response = client.get("/players")
     assert players_response.status_code == 200
     assert "Finn Risdon" in players_response.text
+    assert "Best Cumulative" in players_response.text
+    assert ">485<" in players_response.text  # Finn's best single-day cumulative
 
     days_response = client.get("/days")
     assert days_response.status_code == 200

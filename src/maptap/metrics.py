@@ -36,6 +36,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
         """
         SELECT e.player,
                MAX(e.maptap_score) AS best,
+               MAX(r_sum.cumulative) AS best_cumulative,
                SUM(e.maptap_score) AS total_maptap,
                SUM(r_sum.cumulative) AS total_cumulative,
                SUM(r_sum.hundreds) AS total_hundreds,
@@ -57,6 +58,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
         {
             "player": row["player"],
             "best": row["best"],
+            "best_cumulative": row["best_cumulative"],
             "total_maptap": row["total_maptap"],
             "total_cumulative": row["total_cumulative"],
             "total_hundreds": row["total_hundreds"],

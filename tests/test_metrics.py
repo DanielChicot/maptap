@@ -37,6 +37,19 @@ def test_player_summary_personal_best():
     assert summary["Daniel Chicot"]["days_played"] == 1
 
 
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 485),
+        ("Daniel Chicot", 478),
+        ("Steve Risdon", 413),
+    ],
+)
+def test_player_summary_best_cumulative(player, expected):
+    summary = {r["player"]: r for r in player_summary(_conn())}
+    assert summary[player]["best_cumulative"] == expected
+
+
 def test_daily_leaderboard_ranks_per_day():
     days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
     june15 = days["2026-06-15"]

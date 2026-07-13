@@ -10,6 +10,12 @@
         <a class="chip {% if sort == 'cumulative' %}active{% endif %}" href="/days">Cumulative</a>
         <a class="chip {% if sort == 'maptap' %}active{% endif %}" href="/days?sort=maptap">MapTap</a>
     </div>
+    <div class="chips">
+        <span class="chip-label">Daily wins ({{ 'MapTap' if sort == 'maptap' else 'Cumulative' }})</span>
+        {% for w in win_counts %}
+        <span class="chip static">{{ w.player }} · {{ w.wins }}</span>
+        {% endfor %}
+    </div>
 </div>
 
 <div class="day-grid">

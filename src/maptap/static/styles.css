@@ -127,6 +127,8 @@ main.wrap { padding-top: 6px; padding-bottom: 60px; }
 }
 .chip-label { color: var(--ink-faint); font-size: 13px; align-self: center; }
 .chip:hover { color: var(--ink); }
+.chip.static { cursor: default; }
+.chip.static:hover { color: var(--ink-dim); }
 .chip.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .results-meta { margin-left: auto; color: var(--ink-faint); font-size: 13px; }
 

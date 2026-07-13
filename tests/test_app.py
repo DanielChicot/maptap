@@ -75,6 +75,25 @@ def test_days_sort_by_maptap(tmp_path, monkeypatch):
     assert "Finn Risdon" in response.text
 
 
+def test_days_shows_daily_win_counts(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    cumulative_response = client.get("/days")
+    assert "Daily wins (Cumulative)" in cumulative_response.text
+    assert "Finn Risdon · 2" in cumulative_response.text
+    assert "Steve Risdon · 1" in cumulative_response.text
+    assert "Daniel Chicot · 0" in cumulative_response.text
+
+    maptap_response = client.get("/days?sort=maptap")
+    assert "Daily wins (MapTap)" in maptap_response.text
+    assert "Finn Risdon · 2" in maptap_response.text
+
+
 def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

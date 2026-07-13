@@ -4,7 +4,13 @@ import pathlib
 import pytest
 
 from maptap.db import connect, upsert_entries
-from maptap.metrics import all_entries, daily_leaderboard, hero_stats, player_summary
+from maptap.metrics import (
+    all_entries,
+    daily_leaderboard,
+    daily_win_counts,
+    hero_stats,
+    player_summary,
+)
 from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
 from tests.conftest import SAMPLE_EXPORT
@@ -133,6 +139,46 @@ def test_daily_leaderboard_cumulative_ties_break_on_maptap():
     )
     days = daily_leaderboard(conn)
     assert [s["player"] for s in days[0]["standings"]] == ["Zoe Zenith", "Aaron Alphabetical"]
+
+
+@pytest.mark.parametrize(
+    ("metric", "expected"),
+    [
+        ("cumulative", {"Cume Ace": 1, "MapTap Ace": 0}),
+        ("maptap", {"MapTap Ace": 1, "Cume Ace": 0}),
+    ],
+)
+def test_daily_win_counts_follow_metric(metric, expected):
+    counts = {r["player"]: r["wins"] for r in daily_win_counts(_split_winner_conn(), metric=metric)}
+    assert counts == expected
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 2),
+        ("Steve Risdon", 1),
+        ("Daniel Chicot", 0),
+    ],
+)
+def test_daily_win_counts_over_sample_export(player, expected):
+    counts = {r["player"]: r["wins"] for r in daily_win_counts(_conn())}
+    assert counts[player] == expected
+
+
+def test_daily_win_counts_ordered_by_wins_then_player():
+    players = [r["player"] for r in daily_win_counts(_conn())]
+    assert players == ["Finn Risdon", "Steve Risdon", "Daniel Chicot"]
+
+
+def test_daily_win_counts_tie_credits_both_players():
+    conn = connect()
+    upsert_entries(conn, [
+        _make_entry("Alice", 900),
+        _make_entry("Bob", 880),
+    ])
+    counts = {r["player"]: r["wins"] for r in daily_win_counts(conn, metric="cumulative")}
+    assert counts == {"Alice": 1, "Bob": 1}
 
 
 def test_player_summary_ranked_by_total_cumulative():

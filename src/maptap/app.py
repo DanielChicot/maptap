@@ -8,7 +8,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from maptap.db import connect
-from maptap.metrics import all_entries, daily_leaderboard, hero_stats, player_summary
+from maptap.metrics import (
+    all_entries,
+    daily_leaderboard,
+    daily_win_counts,
+    hero_stats,
+    player_summary,
+)
 
 _BASE = pathlib.Path(__file__).parent
 templates = Jinja2Templates(directory=str(_BASE / "templates"))
@@ -42,6 +48,7 @@ def days(request: Request, sort: str = "cumulative"):
     with closing(_conn()) as conn:
         context = {
             "days": daily_leaderboard(conn, sort=sort),
+            "win_counts": daily_win_counts(conn, metric=sort),
             "stats": hero_stats(conn),
             "active": "days",
             "sort": sort,

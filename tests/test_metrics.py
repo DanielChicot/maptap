@@ -8,6 +8,9 @@ from maptap.metrics import (
     all_entries,
     daily_leaderboard,
     daily_win_counts,
+    green_jersey_totals,
+    green_jersey_win_counts,
+    green_points_by_day,
     hero_stats,
     player_summary,
 )
@@ -171,11 +174,33 @@ def test_daily_win_counts_ordered_by_wins_then_player():
     assert players == ["Finn Risdon", "Steve Risdon", "Daniel Chicot"]
 
 
-def test_daily_win_counts_tie_credits_both_players():
+@pytest.mark.parametrize(
+    ("metric", "entries", "expected"),
+    [
+        (
+            "cumulative",
+            [("Tie Breaker", 900, 90), ("Tied Loser", 800, 90)],
+            {"Tie Breaker": 1, "Tied Loser": 0},
+        ),
+        (
+            "maptap",
+            [("Tie Breaker", 900, 90), ("Tied Loser", 900, 80)],
+            {"Tie Breaker": 1, "Tied Loser": 0},
+        ),
+    ],
+)
+def test_daily_win_counts_tie_broken_by_other_metric(metric, entries, expected):
+    conn = connect()
+    upsert_entries(conn, [_make_entry(p, m, round_score=r) for p, m, r in entries])
+    counts = {r["player"]: r["wins"] for r in daily_win_counts(conn, metric=metric)}
+    assert counts == expected
+
+
+def test_daily_win_counts_exact_tie_credits_both_players():
     conn = connect()
     upsert_entries(conn, [
         _make_entry("Alice", 900),
-        _make_entry("Bob", 880),
+        _make_entry("Bob", 900),
     ])
     counts = {r["player"]: r["wins"] for r in daily_win_counts(conn, metric="cumulative")}
     assert counts == {"Alice": 1, "Bob": 1}
@@ -191,6 +216,106 @@ def test_daily_win_counts_tie_credits_both_players():
 def test_player_summary_wins_use_cumulative_metric(player, expected_wins):
     summary = {r["player"]: r for r in player_summary(_split_winner_conn())}
     assert summary[player]["wins"] == expected_wins
+
+
+def _entry_with_rounds(player, maptap_score, scores, game_date=datetime.date(2026, 6, 15)):
+    rounds = tuple(Round(score=s, emoji="🎯") for s in scores)
+    return Entry(player=player, game_date=game_date, maptap_score=maptap_score, rounds=rounds)
+
+
+@pytest.mark.parametrize(
+    ("game_date", "player", "expected"),
+    [
+        ("2026-06-15", "Finn Risdon", 17),
+        ("2026-06-15", "Daniel Chicot", 13),
+        ("2026-06-19", "Steve Risdon", 20),
+        ("2026-06-20", "Finn Risdon", 20),
+    ],
+)
+def test_green_points_by_day_over_sample_export(game_date, player, expected):
+    points = green_points_by_day(_conn())
+    assert points[game_date][player] == expected
+
+
+def test_green_points_two_way_tie_for_first_splits_to_three_each():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [100, 100, 100, 100, 100]),
+        _entry_with_rounds("Bob", 880, [100, 100, 100, 100, 100]),
+        _entry_with_rounds("Carol", 800, [90, 90, 90, 90, 90]),
+    ])
+    points = green_points_by_day(conn)["2026-06-15"]
+    assert points == {"Alice": 15, "Bob": 15, "Carol": 0}
+
+
+def test_green_points_three_way_tie_splits_to_two_each():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [90, 90, 90, 90, 90]),
+        _entry_with_rounds("Bob", 880, [90, 90, 90, 90, 90]),
+        _entry_with_rounds("Carol", 800, [90, 90, 90, 90, 90]),
+    ])
+    points = green_points_by_day(conn)["2026-06-15"]
+    assert points == {"Alice": 10, "Bob": 10, "Carol": 10}
+
+
+def test_green_points_tie_for_second_splits_to_one_each():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [100, 100, 100, 100, 100]),
+        _entry_with_rounds("Bob", 880, [90, 90, 90, 90, 90]),
+        _entry_with_rounds("Carol", 800, [90, 90, 90, 90, 90]),
+    ])
+    points = green_points_by_day(conn)["2026-06-15"]
+    assert points == {"Alice": 20, "Bob": 5, "Carol": 5}
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 37),
+        ("Steve Risdon", 20),
+        ("Daniel Chicot", 13),
+    ],
+)
+def test_green_jersey_totals_over_sample_export(player, expected):
+    assert green_jersey_totals(_conn())[player] == expected
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 2),
+        ("Steve Risdon", 1),
+        ("Daniel Chicot", 0),
+    ],
+)
+def test_green_jersey_win_counts_over_sample_export(player, expected):
+    counts = {r["player"]: r["wins"] for r in green_jersey_win_counts(_conn())}
+    assert counts[player] == expected
+
+
+def test_green_jersey_win_tie_broken_by_cumulative():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Green Tied Low", 900, [100, 80, 90, 90, 90]),
+        _entry_with_rounds("Green Tied High", 880, [90, 100, 90, 90, 90]),
+    ])
+    counts = {r["player"]: r["wins"] for r in green_jersey_win_counts(conn)}
+    assert counts == {"Green Tied High": 1, "Green Tied Low": 0}
+
+
+def test_daily_leaderboard_standings_include_green_points():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["green"] == 17
+    assert june15["standings"][1]["green"] == 13
+
+
+def test_player_summary_includes_green_points():
+    summary = {r["player"]: r for r in player_summary(_conn())}
+    assert summary["Finn Risdon"]["green_points"] == 37
+    assert summary["Daniel Chicot"]["green_points"] == 13
 
 
 def test_player_summary_ranked_by_total_cumulative():
@@ -228,17 +353,28 @@ def _make_entry(player, maptap_score, game_date=datetime.date(2026, 6, 15), roun
     return Entry(player=player, game_date=game_date, maptap_score=maptap_score, rounds=rounds)
 
 
-def test_wins_tie_credits_both_players():
+def test_wins_exact_tie_credits_both_players():
     conn = connect()
     upsert_entries(conn, [
         _make_entry("Alice", 900, round_score=100),
-        _make_entry("Bob", 880, round_score=100),
+        _make_entry("Bob", 900, round_score=100),
         _make_entry("Carol", 800, round_score=90),
     ])
     summary = {r["player"]: r for r in player_summary(conn)}
     assert summary["Alice"]["wins"] == 1
     assert summary["Bob"]["wins"] == 1
     assert summary["Carol"]["wins"] == 0
+
+
+def test_wins_cumulative_tie_goes_to_higher_maptap():
+    conn = connect()
+    upsert_entries(conn, [
+        _make_entry("Alice", 900, round_score=100),
+        _make_entry("Bob", 880, round_score=100),
+    ])
+    summary = {r["player"]: r for r in player_summary(conn)}
+    assert summary["Alice"]["wins"] == 1
+    assert summary["Bob"]["wins"] == 0
 
 
 def test_hero_stats_over_sample_export():

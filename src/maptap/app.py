@@ -12,6 +12,7 @@ from maptap.metrics import (
     all_entries,
     daily_leaderboard,
     daily_win_counts,
+    green_jersey_win_counts,
     hero_stats,
     player_summary,
 )
@@ -49,6 +50,7 @@ def days(request: Request, sort: str = "cumulative"):
         context = {
             "days": daily_leaderboard(conn, sort=sort),
             "win_counts": daily_win_counts(conn, metric=sort),
+            "green_wins": green_jersey_win_counts(conn),
             "stats": hero_stats(conn),
             "active": "days",
             "sort": sort,

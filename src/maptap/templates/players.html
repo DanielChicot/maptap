@@ -2,7 +2,7 @@
 {% block title %}Players · Map Tappers{% endblock %}
 {% block content %}
 <h2 class="section-head">Players</h2>
-<p class="section-sub">Ranked by total cumulative across every day played.</p>
+<p class="section-sub">Ranked by total yellow jersey (cumulative) across every day played.</p>
 
 <div class="podium">
     {% for p in players[:3] %}
@@ -21,9 +21,10 @@
             <tr>
                 <th class="txt">Player</th>
                 <th class="num">Best MapTap</th>
-                <th class="num">Best Cumulative</th>
+                <th class="num">Best Yellow</th>
                 <th class="num">Total MapTap</th>
-                <th class="num">Total Cumulative</th>
+                <th class="num">Total Yellow</th>
+                <th class="num">Green Pts</th>
                 <th class="num">Total #100s</th>
                 <th class="num">Days</th>
                 <th class="num">Wins</th>
@@ -37,6 +38,7 @@
                 <td class="num">{{ p.best_cumulative }}</td>
                 <td class="num">{{ p.total_maptap }}</td>
                 <td class="num">{{ p.total_cumulative }}</td>
+                <td class="num">{{ p.green_points }}</td>
                 <td class="num">{{ p.total_hundreds }}</td>
                 <td class="num">{{ p.days_played }}</td>
                 <td class="num">{{ p.wins }}</td>

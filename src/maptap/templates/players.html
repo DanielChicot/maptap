@@ -20,9 +20,7 @@
         <thead>
             <tr>
                 <th class="txt">Player</th>
-                <th class="num">Best MapTap</th>
                 <th class="num">Best Yellow</th>
-                <th class="num">Total MapTap</th>
                 <th class="num">Total Yellow</th>
                 <th class="num">Green Pts</th>
                 <th class="num">Total #100s</th>
@@ -34,9 +32,7 @@
             {% for p in players %}
             <tr>
                 <td class="txt">{{ p.player }}</td>
-                <td class="num">{{ p.best }}</td>
                 <td class="num">{{ p.best_cumulative }}</td>
-                <td class="num">{{ p.total_maptap }}</td>
                 <td class="num">{{ p.total_cumulative }}</td>
                 <td class="num">{{ p.green_points }}</td>
                 <td class="num">{{ p.total_hundreds }}</td>

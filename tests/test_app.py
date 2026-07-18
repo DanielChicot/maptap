@@ -43,6 +43,7 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     assert "Finn Risdon" in players_response.text
     assert "Best Yellow" in players_response.text
     assert ">485<" in players_response.text  # Finn's best single-day yellow (cumulative)
+    assert "MapTap" not in players_response.text
 
     days_response = client.get("/days")
     assert days_response.status_code == 200

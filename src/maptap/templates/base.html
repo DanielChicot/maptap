@@ -37,24 +37,19 @@
                     <div class="sub">in the league</div>
                 </div>
                 <div class="stat">
-                    <div class="label">Highest MapTap</div>
-                    <div class="value">{{ stats.highest_maptap if stats.highest_maptap is not none else '—' }}</div>
-                    <div class="sub">{{ stats.highest_maptap_player or '—' }}</div>
-                </div>
-                <div class="stat">
                     <div class="label">Highest Yellow</div>
                     <div class="value">{{ stats.highest_cumulative if stats.highest_cumulative is not none else '—' }}</div>
                     <div class="sub">{{ stats.highest_cumulative_player or '—' }}</div>
                 </div>
                 <div class="stat">
-                    <div class="label">MapTap Leader</div>
-                    <div class="value" style="font-size:22px">{{ stats.leader or '—' }}</div>
-                    <div class="sub">{{ stats.leader_total if stats.leader_total is not none else '—' }} total MapTap</div>
-                </div>
-                <div class="stat">
                     <div class="label">Yellow Jersey Leader</div>
                     <div class="value" style="font-size:22px">{{ stats.cumulative_leader or '—' }}</div>
                     <div class="sub">{{ stats.cumulative_leader_total if stats.cumulative_leader_total is not none else '—' }} total yellow</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Green Jersey Leader</div>
+                    <div class="value" style="font-size:22px">{{ stats.green_leader or '—' }}</div>
+                    <div class="sub">{{ stats.green_leader_total if stats.green_leader_total is not none else '—' }} total green</div>
                 </div>
                 <div class="stat">
                     <div class="label">Total 100s</div>

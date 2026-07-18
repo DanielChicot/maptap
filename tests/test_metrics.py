@@ -73,6 +73,12 @@ def test_hero_stats_cumulative_leader():
     assert stats["cumulative_leader_total"] == 862
 
 
+def test_hero_stats_green_jersey_leader():
+    stats = hero_stats(_conn())
+    assert stats["green_leader"] == "Finn Risdon"
+    assert stats["green_leader_total"] == 37
+
+
 def test_hero_stats_highest_cumulative():
     stats = hero_stats(_conn())
     assert stats["highest_cumulative"] == 485
@@ -409,6 +415,8 @@ def test_hero_stats_empty_database():
         "leader_total": None,
         "cumulative_leader": None,
         "cumulative_leader_total": None,
+        "green_leader": None,
+        "green_leader_total": None,
         "highest_cumulative": None,
         "highest_cumulative_player": None,
         "total_hundreds": 0,

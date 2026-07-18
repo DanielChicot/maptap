@@ -151,11 +151,14 @@ def test_index_hero_shows_leader(tmp_path, monkeypatch):
     client = TestClient(app)
     response = client.get("/")
     assert "Finn Risdon" in response.text
-    assert "1788" in response.text
     assert "Yellow Jersey Leader" in response.text
     assert "862 total yellow" in response.text
     assert "Highest Yellow" in response.text
     assert ">485<" in response.text
+    assert "Green Jersey Leader" in response.text
+    assert "37 total green" in response.text
+    assert "Highest MapTap" not in response.text
+    assert "MapTap Leader" not in response.text
 
 
 def test_league_has_player_filter_chips(tmp_path, monkeypatch):

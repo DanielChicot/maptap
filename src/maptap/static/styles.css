@@ -103,7 +103,7 @@ body::before {
 .hero h1 .out { color: transparent; -webkit-text-stroke: 1.6px var(--ink); }
 .hero-sub { color: var(--ink-dim); max-width: 52ch; font-size: 15px; }
 
-.stat-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 30px; }
+.stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 30px; }
 .stat {
   background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
   border-radius: var(--radius); padding: 18px;

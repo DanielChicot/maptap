@@ -241,6 +241,9 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
         """
     ).fetchone()
 
+    green_totals = green_jersey_totals(conn)
+    green_leader = min(green_totals.items(), key=lambda pt: (-pt[1], pt[0])) if green_totals else None
+
     total_hundreds = conn.execute(
         "SELECT COUNT(*) AS n FROM rounds WHERE score = 100"
     ).fetchone()["n"]
@@ -255,5 +258,7 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
         "leader_total": leader["total"] if leader else None,
         "cumulative_leader": cumulative_leader["player"] if cumulative_leader else None,
         "cumulative_leader_total": cumulative_leader["total"] if cumulative_leader else None,
+        "green_leader": green_leader[0] if green_leader else None,
+        "green_leader_total": green_leader[1] if green_leader else None,
         "total_hundreds": total_hundreds,
     }

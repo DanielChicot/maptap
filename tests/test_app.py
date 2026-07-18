@@ -195,6 +195,22 @@ def test_players_page_has_podium(tmp_path, monkeypatch):
     assert "2 wins · best 485 · 5 ×100s · 2 days" in response.text
 
 
+def test_players_table_is_sortable(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/players")
+    assert "data-sortable" in response.text
+    assert "/static/sort.js" in response.text
+    assert 'data-sort="text"' in response.text
+    assert response.text.count('data-sort="number"') == 6
+    assert 'data-sorted="desc"' in response.text  # Total Yellow carries the default order
+
+
 def test_days_page_has_day_cards(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

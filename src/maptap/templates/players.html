@@ -16,16 +16,16 @@
 </div>
 
 <div class="panel table-card">
-    <table>
+    <table data-sortable>
         <thead>
             <tr>
-                <th class="txt">Player</th>
-                <th class="num">Best Yellow</th>
-                <th class="num">Total Yellow</th>
-                <th class="num">Green Pts</th>
-                <th class="num">Total #100s</th>
-                <th class="num">Days</th>
-                <th class="num">Wins</th>
+                <th class="txt" data-sort="text">Player</th>
+                <th class="num" data-sort="number">Best Yellow</th>
+                <th class="num" data-sort="number" data-sorted="desc">Total Yellow</th>
+                <th class="num" data-sort="number">Green Pts</th>
+                <th class="num" data-sort="number">Total #100s</th>
+                <th class="num" data-sort="number">Days</th>
+                <th class="num" data-sort="number">Wins</th>
             </tr>
         </thead>
         <tbody>
@@ -43,4 +43,7 @@
         </tbody>
     </table>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/sort.js"></script>
 {% endblock %}

@@ -10,7 +10,7 @@
         <div class="rank">#{{ loop.index }}</div>
         <div class="who">{{ p.player }}</div>
         <div class="big num">{{ p.total_cumulative }}</div>
-        <div class="meta">{{ p.wins }} wins · best {{ p.best }} · {{ p.total_hundreds }} ×100s · {{ p.days_played }} days</div>
+        <div class="meta">{{ p.wins }} wins · best {{ p.best_cumulative }} · {{ p.total_hundreds }} ×100s · {{ p.days_played }} days</div>
     </div>
     {% endfor %}
 </div>

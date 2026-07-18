@@ -181,6 +181,18 @@ def test_daily_win_counts_tie_credits_both_players():
     assert counts == {"Alice": 1, "Bob": 1}
 
 
+@pytest.mark.parametrize(
+    ("player", "expected_wins"),
+    [
+        ("Cume Ace", 1),
+        ("MapTap Ace", 0),
+    ],
+)
+def test_player_summary_wins_use_cumulative_metric(player, expected_wins):
+    summary = {r["player"]: r for r in player_summary(_split_winner_conn())}
+    assert summary[player]["wins"] == expected_wins
+
+
 def test_player_summary_ranked_by_total_cumulative():
     players = [r["player"] for r in player_summary(_split_winner_conn())]
     assert players == ["Cume Ace", "MapTap Ace"]
@@ -211,17 +223,17 @@ def test_full_export_structural_invariants():
         assert row["maptap_score"] > 0
 
 
-def _make_entry(player, maptap_score, game_date=datetime.date(2026, 6, 15)):
-    rounds = tuple(Round(score=100, emoji="🎯") for _ in range(5))
+def _make_entry(player, maptap_score, game_date=datetime.date(2026, 6, 15), round_score=100):
+    rounds = tuple(Round(score=round_score, emoji="🎯") for _ in range(5))
     return Entry(player=player, game_date=game_date, maptap_score=maptap_score, rounds=rounds)
 
 
 def test_wins_tie_credits_both_players():
     conn = connect()
     upsert_entries(conn, [
-        _make_entry("Alice", 900),
-        _make_entry("Bob", 900),
-        _make_entry("Carol", 800),
+        _make_entry("Alice", 900, round_score=100),
+        _make_entry("Bob", 880, round_score=100),
+        _make_entry("Carol", 800, round_score=90),
     ])
     summary = {r["player"]: r for r in player_summary(conn)}
     assert summary["Alice"]["wins"] == 1

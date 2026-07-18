@@ -53,7 +53,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
         """
     ).fetchall()
 
-    wins = _wins_by_player(conn)
+    wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
     return [
         {
             "player": row["player"],
@@ -67,22 +67,6 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
         }
         for row in base
     ]
-
-
-def _wins_by_player(conn: sqlite3.Connection) -> dict[str, int]:
-    rows = conn.execute(
-        """
-        SELECT player FROM entries e
-        WHERE e.maptap_score = (
-            SELECT MAX(maptap_score) FROM entries e2
-            WHERE e2.game_date = e.game_date
-        )
-        """
-    ).fetchall()
-    counts: dict[str, int] = {}
-    for row in rows:
-        counts[row["player"]] = counts.get(row["player"], 0) + 1
-    return counts
 
 
 def daily_win_counts(conn: sqlite3.Connection, metric: str = "cumulative") -> list[dict]:

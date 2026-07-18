@@ -155,7 +155,7 @@ def test_players_page_has_podium(tmp_path, monkeypatch):
     assert "rank-1" in response.text
     assert "rank-2" in response.text
     assert ">862</div>" in response.text  # Finn's total cumulative as the podium score
-    assert "2 wins · best 955 · 5 ×100s · 2 days" in response.text
+    assert "2 wins · best 485 · 5 ×100s · 2 days" in response.text
 
 
 def test_days_page_has_day_cards(tmp_path, monkeypatch):

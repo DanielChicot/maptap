@@ -24,7 +24,10 @@ def test_index_lists_entries(tmp_path, monkeypatch):
     response = client.get("/")
     assert response.status_code == 200
     assert "Daniel Chicot" in response.text
-    assert "955" in response.text
+    assert ">485<" in response.text  # Finn's June 15 yellow tops the table
+    assert ">Green<" in response.text
+    assert ">17<" in response.text  # Finn's June 15 green points
+    assert ">MapTap<" not in response.text
 
 
 def test_players_and_days_routes(tmp_path, monkeypatch):

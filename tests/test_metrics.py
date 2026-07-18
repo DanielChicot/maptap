@@ -25,11 +25,11 @@ def _conn():
     return conn
 
 
-def test_all_entries_default_sorted_by_maptap_desc():
+def test_all_entries_default_sorted_by_cumulative_desc():
     rows = all_entries(_conn())
-    scores = [r["maptap_score"] for r in rows]
+    scores = [r["cumulative"] for r in rows]
     assert scores == sorted(scores, reverse=True)
-    assert scores[0] == 955
+    assert scores[0] == 485
 
 
 def test_all_entries_includes_derived_fields():
@@ -37,6 +37,7 @@ def test_all_entries_includes_derived_fields():
     dan = next(r for r in rows if r["player"] == "Daniel Chicot")
     assert dan["cumulative"] == 478
     assert dan["hundreds"] == 1
+    assert dan["green"] == 13
     assert dan["rounds"] == [100, 99, 98, 95, 86]
 
 
@@ -357,7 +358,7 @@ def test_full_export_structural_invariants():
 
     assert rows
     assert {r["player"] for r in rows} <= {"Daniel Chicot", "Steve Risdon", "Finn Risdon"}
-    assert rows[0]["maptap_score"] == max(r["maptap_score"] for r in rows)
+    assert rows[0]["cumulative"] == max(r["cumulative"] for r in rows)
     for row in rows:
         assert len(row["rounds"]) == 5
         assert all(isinstance(score, int) and score >= 0 for score in row["rounds"])

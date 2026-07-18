@@ -10,9 +10,10 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
         FROM entries e
         JOIN rounds r ON r.entry_id = e.id
         GROUP BY e.id
-        ORDER BY e.maptap_score DESC, e.player ASC, e.game_date ASC
+        ORDER BY cumulative DESC, e.maptap_score DESC, e.player ASC, e.game_date ASC
         """
     ).fetchall()
+    green = green_points_by_day(conn)
     result = []
     for row in rows:
         rounds = conn.execute(
@@ -25,6 +26,7 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
                 "maptap_score": row["maptap_score"],
                 "cumulative": row["cumulative"],
                 "hundreds": row["hundreds"],
+                "green": green[row["game_date"]][row["player"]],
                 "rounds": [r["score"] for r in rounds],
             }
         )

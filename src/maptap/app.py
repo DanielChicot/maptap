@@ -44,13 +44,17 @@ def players(request: Request):
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request, sort: str = "cumulative"):
-    if sort not in ("cumulative", "maptap"):
+    if sort not in ("cumulative", "green"):
         sort = "cumulative"
     with closing(_conn()) as conn:
+        win_counts = (
+            green_jersey_win_counts(conn)
+            if sort == "green"
+            else daily_win_counts(conn, metric="cumulative")
+        )
         context = {
             "days": daily_leaderboard(conn, sort=sort),
-            "win_counts": daily_win_counts(conn, metric=sort),
-            "green_wins": green_jersey_win_counts(conn),
+            "win_counts": win_counts,
             "stats": hero_stats(conn),
             "active": "days",
             "sort": sort,

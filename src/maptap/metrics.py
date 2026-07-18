@@ -173,34 +173,40 @@ def daily_win_counts(conn: sqlite3.Connection, metric: str = "cumulative") -> li
     return [{"player": row["player"], "wins": row["wins"]} for row in rows]
 
 
+_DAILY_SORT_KEYS = {
+    "cumulative": lambda s: (-s["cumulative"], -s["maptap_score"], s["player"]),
+    "maptap": lambda s: (-s["maptap_score"], -s["cumulative"], s["player"]),
+    "green": lambda s: (-s["green"], -s["cumulative"], -s["maptap_score"], s["player"]),
+}
+
+
 def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> list[dict]:
-    sort_column = {
-        "cumulative": "cumulative DESC, e.maptap_score",
-        "maptap": "e.maptap_score DESC, cumulative",
-    }[sort]
+    sort_key = _DAILY_SORT_KEYS[sort]
     rows = conn.execute(
-        f"""
+        """
         SELECT e.game_date, e.player, e.maptap_score,
                SUM(r.score) AS cumulative
         FROM entries e
         JOIN rounds r ON r.entry_id = e.id
         GROUP BY e.id
-        ORDER BY e.game_date DESC, {sort_column} DESC, e.player ASC
+        ORDER BY e.game_date DESC
         """
     ).fetchall()
     green = green_points_by_day(conn)
     by_day: dict[str, list[dict]] = {}
     for row in rows:
-        standings = by_day.setdefault(row["game_date"], [])
-        standings.append(
+        by_day.setdefault(row["game_date"], []).append(
             {
-                "position": len(standings) + 1,
                 "player": row["player"],
                 "maptap_score": row["maptap_score"],
                 "cumulative": row["cumulative"],
                 "green": green[row["game_date"]][row["player"]],
             }
         )
+    for standings in by_day.values():
+        standings.sort(key=sort_key)
+        for position, standing in enumerate(standings, start=1):
+            standing["position"] = position
     return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]
 
 

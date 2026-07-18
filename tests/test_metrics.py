@@ -323,6 +323,18 @@ def test_player_summary_ranked_by_total_cumulative():
     assert players == ["Cume Ace", "MapTap Ace"]
 
 
+def test_daily_leaderboard_green_sort_ranks_by_green_points():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Sprinter", 700, [60, 60, 60, 0, 0]),
+        _entry_with_rounds("Steady", 800, [50, 50, 50, 100, 100]),
+    ])
+    green_order = [s["player"] for s in daily_leaderboard(conn, sort="green")[0]["standings"]]
+    yellow_order = [s["player"] for s in daily_leaderboard(conn)[0]["standings"]]
+    assert green_order == ["Sprinter", "Steady"]
+    assert yellow_order == ["Steady", "Sprinter"]
+
+
 def test_daily_leaderboard_defaults_to_cumulative_order():
     days = daily_leaderboard(_split_winner_conn())
     assert days[0]["standings"][0]["player"] == "Cume Ace"

@@ -58,11 +58,12 @@ def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert ">485<" in response.text  # Finn's June 15 cumulative
     assert ">478<" in response.text  # Dan's June 15 cumulative
-    assert 'href="/days?sort=maptap"' in response.text
+    assert 'href="/days?sort=green"' in response.text
     assert 'href="/days"' in response.text
+    assert 'href="/days?sort=maptap"' not in response.text
 
 
-def test_days_sort_by_maptap(tmp_path, monkeypatch):
+def test_days_sort_by_green(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -70,7 +71,7 @@ def test_days_sort_by_maptap(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    response = client.get("/days?sort=maptap")
+    response = client.get("/days?sort=green")
     assert response.status_code == 200
     assert "Finn Risdon" in response.text
 
@@ -89,9 +90,10 @@ def test_days_shows_daily_win_counts(tmp_path, monkeypatch):
     assert "Steve Risdon · 1" in cumulative_response.text
     assert "Daniel Chicot · 0" in cumulative_response.text
 
-    maptap_response = client.get("/days?sort=maptap")
-    assert "Daily wins (MapTap)" in maptap_response.text
-    assert "Finn Risdon · 2" in maptap_response.text
+    green_response = client.get("/days?sort=green")
+    assert "Daily wins (Green)" in green_response.text
+    assert "Finn Risdon · 2" in green_response.text
+    assert "Steve Risdon · 1" in green_response.text
 
 
 def test_days_shows_green_jersey(tmp_path, monkeypatch):
@@ -103,10 +105,10 @@ def test_days_shows_green_jersey(tmp_path, monkeypatch):
 
     client = TestClient(app)
     response = client.get("/days")
-    assert "Green jersey wins" in response.text
     assert ">Green<" in response.text  # day-table column header
     assert ">17<" in response.text  # Finn's June 15 green points
     assert ">13<" in response.text  # Dan's June 15 green points
+    assert ">MapTap<" not in response.text  # MapTap gone from tables and toggle
 
 
 def test_players_page_shows_green_totals(tmp_path, monkeypatch):

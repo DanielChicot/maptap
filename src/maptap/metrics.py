@@ -1,3 +1,4 @@
+import datetime
 import sqlite3
 
 
@@ -212,7 +213,21 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
     return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]
 
 
-def hero_stats(conn: sqlite3.Connection) -> dict:
+def _best_yellow_between(
+    conn: sqlite3.Connection, start: datetime.date, end: datetime.date
+) -> sqlite3.Row | None:
+    return conn.execute(
+        """
+        SELECT e.player, SUM(r.score) AS total
+        FROM entries e JOIN rounds r ON r.entry_id = e.id
+        WHERE e.game_date >= ? AND e.game_date < ?
+        GROUP BY e.id ORDER BY total DESC, e.player ASC LIMIT 1
+        """,
+        (start.isoformat(), end.isoformat()),
+    ).fetchone()
+
+
+def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> dict:
     days_tracked = conn.execute(
         "SELECT COUNT(DISTINCT game_date) AS n FROM entries"
     ).fetchone()["n"]
@@ -246,6 +261,11 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
     green_totals = green_jersey_totals(conn)
     green_leader = min(green_totals.items(), key=lambda pt: (-pt[1], pt[0])) if green_totals else None
 
+    today = today or datetime.date.today()
+    week_start = today - datetime.timedelta(days=today.weekday())
+    week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
+    last_week_best = _best_yellow_between(conn, week_start - datetime.timedelta(days=7), week_start)
+
     total_hundreds = conn.execute(
         "SELECT COUNT(*) AS n FROM rounds WHERE score = 100"
     ).fetchone()["n"]
@@ -262,5 +282,9 @@ def hero_stats(conn: sqlite3.Connection) -> dict:
         "cumulative_leader_total": cumulative_leader["total"] if cumulative_leader else None,
         "green_leader": green_leader[0] if green_leader else None,
         "green_leader_total": green_leader[1] if green_leader else None,
+        "week_best": week_best["total"] if week_best else None,
+        "week_best_player": week_best["player"] if week_best else None,
+        "last_week_best": last_week_best["total"] if last_week_best else None,
+        "last_week_best_player": last_week_best["player"] if last_week_best else None,
         "total_hundreds": total_hundreds,
     }

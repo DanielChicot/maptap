@@ -42,6 +42,16 @@
                     <div class="sub">{{ stats.highest_cumulative_player or '—' }}</div>
                 </div>
                 <div class="stat">
+                    <div class="label">This Week's Best</div>
+                    <div class="value">{{ stats.week_best if stats.week_best is not none else '—' }}</div>
+                    <div class="sub">{{ stats.week_best_player or 'no rides yet' }}</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Last Week's Best</div>
+                    <div class="value">{{ stats.last_week_best if stats.last_week_best is not none else '—' }}</div>
+                    <div class="sub">{{ stats.last_week_best_player or 'no rides' }}</div>
+                </div>
+                <div class="stat">
                     <div class="label">Yellow Jersey Leader</div>
                     <div class="value" style="font-size:22px">{{ stats.cumulative_leader or '—' }}</div>
                     <div class="sub">{{ stats.cumulative_leader_total if stats.cumulative_leader_total is not none else '—' }} total yellow</div>

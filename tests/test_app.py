@@ -161,6 +161,8 @@ def test_index_hero_shows_leader(tmp_path, monkeypatch):
     assert ">485<" in response.text
     assert "Green Jersey Leader" in response.text
     assert "37 total green" in response.text
+    assert "This Week's Best" in response.text
+    assert "Last Week's Best" in response.text
     assert "Highest MapTap" not in response.text
     assert "MapTap Leader" not in response.text
 

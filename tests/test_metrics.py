@@ -74,6 +74,23 @@ def test_hero_stats_cumulative_leader():
     assert stats["cumulative_leader_total"] == 862
 
 
+@pytest.mark.parametrize(
+    ("today", "week_best", "week_best_player", "last_week_best", "last_week_best_player"),
+    [
+        # Friday of the week containing all June 15-21 entries; prior week is empty.
+        (datetime.date(2026, 6, 19), 485, "Finn Risdon", None, None),
+        # Monday of the following week: entries now fall in "last week".
+        (datetime.date(2026, 6, 22), None, None, 485, "Finn Risdon"),
+    ],
+)
+def test_hero_stats_weekly_bests(today, week_best, week_best_player, last_week_best, last_week_best_player):
+    stats = hero_stats(_conn(), today=today)
+    assert stats["week_best"] == week_best
+    assert stats["week_best_player"] == week_best_player
+    assert stats["last_week_best"] == last_week_best
+    assert stats["last_week_best_player"] == last_week_best_player
+
+
 def test_hero_stats_green_jersey_leader():
     stats = hero_stats(_conn())
     assert stats["green_leader"] == "Finn Risdon"
@@ -420,5 +437,9 @@ def test_hero_stats_empty_database():
         "green_leader_total": None,
         "highest_cumulative": None,
         "highest_cumulative_player": None,
+        "week_best": None,
+        "week_best_player": None,
+        "last_week_best": None,
+        "last_week_best_player": None,
         "total_hundreds": 0,
     }

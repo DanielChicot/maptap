@@ -262,7 +262,8 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     green_leader = min(green_totals.items(), key=lambda pt: (-pt[1], pt[0])) if green_totals else None
 
     today = today or datetime.date.today()
-    week_start = today - datetime.timedelta(days=today.weekday())
+    # Weeks run Sunday to Saturday.
+    week_start = today - datetime.timedelta(days=(today.weekday() + 1) % 7)
     week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
     last_week_best = _best_yellow_between(conn, week_start - datetime.timedelta(days=7), week_start)
 

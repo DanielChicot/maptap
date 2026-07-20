@@ -77,9 +77,11 @@ def test_hero_stats_cumulative_leader():
 @pytest.mark.parametrize(
     ("today", "week_best", "week_best_player", "last_week_best", "last_week_best_player"),
     [
-        # Friday of the week containing all June 15-21 entries; prior week is empty.
+        # Friday of the Sun 14 - Sat 20 week containing all entries; prior week is empty.
         (datetime.date(2026, 6, 19), 485, "Finn Risdon", None, None),
-        # Monday of the following week: entries now fall in "last week".
+        # Sunday starts a new week: entries roll over to "last week" immediately.
+        (datetime.date(2026, 6, 21), None, None, 485, "Finn Risdon"),
+        # Monday of the following week: entries still in "last week".
         (datetime.date(2026, 6, 22), None, None, 485, "Finn Risdon"),
     ],
 )

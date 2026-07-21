@@ -295,3 +295,16 @@ def test_index_hero_shows_polka_dot_leader(tmp_path, monkeypatch):
     response = client.get("/")
     assert "Polka Dot Leader" in response.text
     assert "36 total polka" in response.text
+
+
+def test_days_unknown_sort_falls_back_to_cumulative(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days?sort=bogus")
+    assert response.status_code == 200
+    assert "Daily wins (Yellow)" in response.text

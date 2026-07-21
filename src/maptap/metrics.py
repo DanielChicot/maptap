@@ -268,10 +268,6 @@ def _best_yellow_between(
 
 
 def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> dict:
-    days_tracked = conn.execute(
-        "SELECT COUNT(DISTINCT game_date) AS n FROM entries"
-    ).fetchone()["n"]
-
     highest = conn.execute(
         "SELECT player, maptap_score FROM entries "
         "ORDER BY maptap_score DESC, player ASC LIMIT 1"
@@ -310,12 +306,7 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
     last_week_best = _best_yellow_between(conn, week_start - datetime.timedelta(days=7), week_start)
 
-    total_hundreds = conn.execute(
-        "SELECT COUNT(*) AS n FROM rounds WHERE score = 100"
-    ).fetchone()["n"]
-
     return {
-        "days_tracked": days_tracked,
         "highest_maptap": highest["maptap_score"] if highest else None,
         "highest_maptap_player": highest["player"] if highest else None,
         "highest_cumulative": highest_cumulative["total"] if highest_cumulative else None,
@@ -332,5 +323,4 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "week_best_player": week_best["player"] if week_best else None,
         "last_week_best": last_week_best["total"] if last_week_best else None,
         "last_week_best_player": last_week_best["player"] if last_week_best else None,
-        "total_hundreds": total_hundreds,
     }

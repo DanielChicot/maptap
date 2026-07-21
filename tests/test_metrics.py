@@ -510,12 +510,10 @@ def test_wins_cumulative_tie_goes_to_higher_maptap():
 
 def test_hero_stats_over_sample_export():
     stats = hero_stats(_conn())
-    assert stats["days_tracked"] == 3
     assert stats["highest_maptap"] == 955
     assert stats["highest_maptap_player"] == "Finn Risdon"
     assert stats["leader"] == "Finn Risdon"
     assert stats["leader_total"] == 1788
-    assert stats["total_hundreds"] == 6
 
 
 def test_all_entries_include_polka_points():
@@ -558,7 +556,6 @@ def test_hero_stats_polka_dot_leader():
 def test_hero_stats_empty_database():
     stats = hero_stats(connect())
     assert stats == {
-        "days_tracked": 0,
         "highest_maptap": None,
         "highest_maptap_player": None,
         "leader": None,
@@ -575,5 +572,4 @@ def test_hero_stats_empty_database():
         "week_best_player": None,
         "last_week_best": None,
         "last_week_best_player": None,
-        "total_hundreds": 0,
     }

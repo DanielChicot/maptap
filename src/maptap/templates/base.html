@@ -32,11 +32,6 @@
             <p class="hero-sub">Three players, five rounds a day. Every score from the group chat, ranked and totted up.</p>
             <div class="stat-row">
                 <div class="stat">
-                    <div class="label">Days tracked</div>
-                    <div class="value">{{ stats.days_tracked }}</div>
-                    <div class="sub">in the league</div>
-                </div>
-                <div class="stat">
                     <div class="label">Highest Yellow</div>
                     <div class="value">{{ stats.highest_cumulative if stats.highest_cumulative is not none else '—' }}</div>
                     <div class="sub">{{ stats.highest_cumulative_player or '—' }}</div>
@@ -65,11 +60,6 @@
                     <div class="label">Polka Dot Leader</div>
                     <div class="value" style="font-size:22px">{{ stats.polka_leader or '—' }}</div>
                     <div class="sub">{{ stats.polka_leader_total if stats.polka_leader_total is not none else '—' }} total polka</div>
-                </div>
-                <div class="stat">
-                    <div class="label">Total 100s</div>
-                    <div class="value">{{ stats.total_hundreds }}</div>
-                    <div class="sub">perfect rounds</div>
                 </div>
             </div>
         </div>

@@ -127,16 +127,25 @@ def polka_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
     return _points_by_day(conn, _POLKA_SCHEDULE)
 
 
-def green_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:
+def _jersey_totals(by_day: dict[str, dict[str, int]]) -> dict[str, int]:
     totals: dict[str, int] = {}
-    for day in green_points_by_day(conn).values():
+    for day in by_day.values():
         for player, points in day.items():
             totals[player] = totals.get(player, 0) + points
     return totals
 
 
-def green_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
-    green = green_points_by_day(conn)
+def green_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:
+    return _jersey_totals(green_points_by_day(conn))
+
+
+def polka_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:
+    return _jersey_totals(polka_points_by_day(conn))
+
+
+def _jersey_win_counts(
+    conn: sqlite3.Connection, points_by_day: dict[str, dict[str, int]]
+) -> list[dict]:
     rows = conn.execute(
         """
         SELECT e.game_date, e.player, e.maptap_score,
@@ -149,7 +158,8 @@ def green_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
     wins: dict[str, int] = {row["player"]: 0 for row in rows}
     by_day: dict[str, list[tuple[tuple[int, int, int], str]]] = {}
     for row in rows:
-        rank_key = (green[row["game_date"]][row["player"]], row["cumulative"], row["maptap_score"])
+        day_points = points_by_day.get(row["game_date"], {})
+        rank_key = (day_points.get(row["player"], 0), row["cumulative"], row["maptap_score"])
         by_day.setdefault(row["game_date"], []).append((rank_key, row["player"]))
     for standings in by_day.values():
         best = max(rank_key for rank_key, _ in standings)
@@ -160,6 +170,14 @@ def green_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
         {"player": player, "wins": count}
         for player, count in sorted(wins.items(), key=lambda pw: (-pw[1], pw[0]))
     ]
+
+
+def green_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
+    return _jersey_win_counts(conn, green_points_by_day(conn))
+
+
+def polka_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
+    return _jersey_win_counts(conn, polka_points_by_day(conn))
 
 
 def daily_win_counts(conn: sqlite3.Connection, metric: str = "cumulative") -> list[dict]:

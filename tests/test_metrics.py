@@ -13,6 +13,8 @@ from maptap.metrics import (
     green_points_by_day,
     hero_stats,
     player_summary,
+    polka_jersey_totals,
+    polka_jersey_win_counts,
     polka_points_by_day,
 )
 from maptap.models import Entry, Round
@@ -330,6 +332,43 @@ def test_green_jersey_win_tie_broken_by_cumulative():
     ])
     counts = {r["player"]: r["wins"] for r in green_jersey_win_counts(conn)}
     assert counts == {"Green Tied High": 1, "Green Tied Low": 0}
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 36),
+        ("Steve Risdon", 20),
+        ("Daniel Chicot", 14),
+    ],
+)
+def test_polka_jersey_totals_over_sample_export(player, expected):
+    assert polka_jersey_totals(_conn())[player] == expected
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 2),
+        ("Steve Risdon", 1),
+        ("Daniel Chicot", 0),
+    ],
+)
+def test_polka_jersey_win_counts_over_sample_export(player, expected):
+    counts = {r["player"]: r["wins"] for r in polka_jersey_win_counts(_conn())}
+    assert counts[player] == expected
+
+
+def test_polka_jersey_win_tie_broken_by_cumulative():
+    conn = connect()
+    upsert_entries(conn, [
+        # Both score 15 polka (3 + one round won at 8 + one lost at 4);
+        # High's rounds 1-2 lift cumulative without touching polka.
+        _entry_with_rounds("Polka Tied Low", 900, [90, 90, 90, 100, 90]),
+        _entry_with_rounds("Polka Tied High", 880, [100, 90, 90, 90, 100]),
+    ])
+    counts = {r["player"]: r["wins"] for r in polka_jersey_win_counts(conn)}
+    assert counts == {"Polka Tied High": 1, "Polka Tied Low": 0}
 
 
 @pytest.mark.parametrize(

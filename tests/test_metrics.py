@@ -13,6 +13,7 @@ from maptap.metrics import (
     green_points_by_day,
     hero_stats,
     player_summary,
+    polka_points_by_day,
 )
 from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
@@ -329,6 +330,59 @@ def test_green_jersey_win_tie_broken_by_cumulative():
     ])
     counts = {r["player"]: r["wins"] for r in green_jersey_win_counts(conn)}
     assert counts == {"Green Tied High": 1, "Green Tied Low": 0}
+
+
+@pytest.mark.parametrize(
+    ("game_date", "player", "expected"),
+    [
+        ("2026-06-15", "Finn Risdon", 16),   # r3: 4, r4: 8, r5: 4 (Dan 86 beats Finn 85)
+        ("2026-06-15", "Daniel Chicot", 14),  # r3: 2, r4: 4, r5: 8
+        ("2026-06-19", "Steve Risdon", 20),   # solo day: 4 + 8 + 8
+        ("2026-06-20", "Finn Risdon", 20),    # solo day
+    ],
+)
+def test_polka_points_by_day_over_sample_export(game_date, player, expected):
+    points = polka_points_by_day(_conn())
+    assert points[game_date][player] == expected
+
+
+def test_polka_points_ignore_first_two_rounds():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Sprinter", 900, [100, 100, 0, 0, 0]),
+        _entry_with_rounds("Climber", 800, [0, 0, 100, 100, 100]),
+    ])
+    points = polka_points_by_day(conn)["2026-06-15"]
+    assert points == {"Climber": 20, "Sprinter": 10}
+
+
+@pytest.mark.parametrize(
+    ("rounds_by_player", "expected"),
+    [
+        # Two-way tie for first every round: (4+2)//2=3, then (8+4)//2=6 twice.
+        (
+            {"Alice": [90, 90, 90, 90, 90], "Bob": [90, 90, 90, 90, 90], "Carol": [80, 80, 80, 80, 80]},
+            {"Alice": 15, "Bob": 15, "Carol": 0},
+        ),
+        # Three-way tie every round: (4+2+0)//3=2, then (8+4+0)//3=4 twice.
+        (
+            {"Alice": [90, 90, 90, 90, 90], "Bob": [90, 90, 90, 90, 90], "Carol": [90, 90, 90, 90, 90]},
+            {"Alice": 10, "Bob": 10, "Carol": 10},
+        ),
+        # Tie for second every round: (2+0)//2=1, then (4+0)//2=2 twice.
+        (
+            {"Alice": [100, 100, 100, 100, 100], "Bob": [90, 90, 90, 90, 90], "Carol": [90, 90, 90, 90, 90]},
+            {"Alice": 20, "Bob": 5, "Carol": 5},
+        ),
+    ],
+)
+def test_polka_points_split_doubled_pots_between_tied_players(rounds_by_player, expected):
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds(player, 900, scores)
+        for player, scores in rounds_by_player.items()
+    ])
+    assert polka_points_by_day(conn)["2026-06-15"] == expected
 
 
 def test_daily_leaderboard_standings_include_green_points():

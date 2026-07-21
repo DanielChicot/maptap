@@ -74,26 +74,31 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
     ]
 
 
-# Green jersey: per round, 1st scores 4, 2nd scores 2, 3rd scores 0.
-# Tied players split the points of the positions they jointly occupy
-# (two-way tie for first: 3 each; three-way tie: 2 each; tie for second: 1 each).
-_GREEN_POINTS = (4, 2, 0)
+# Per round, 1st/2nd/3rd take the pot values. Tied players split the points
+# of the positions they jointly occupy (two-way tie for first with pot
+# (4, 2, 0): 3 each; three-way tie: 2 each; tie for second: 1 each).
+_GREEN_SCHEDULE = {idx: (4, 2, 0) for idx in range(5)}
+# Polka dot (King of the Mountains): only the last three rounds score,
+# and the final two are worth double.
+_POLKA_SCHEDULE = {2: (4, 2, 0), 3: (8, 4, 0), 4: (8, 4, 0)}
 
 
-def _round_green_points(scores: list[tuple[str, int]]) -> dict[str, int]:
+def _round_points(scores: list[tuple[str, int]], pot: tuple[int, int, int]) -> dict[str, int]:
     ranked = sorted(scores, key=lambda ps: ps[1], reverse=True)
     points: dict[str, int] = {}
     position = 0
     while position < len(ranked):
         tied = [player for player, score in ranked if score == ranked[position][1]]
-        pot = sum(_GREEN_POINTS[position:position + len(tied)])
+        shared = sum(pot[position:position + len(tied)])
         for player in tied:
-            points[player] = pot // len(tied)
+            points[player] = shared // len(tied)
         position += len(tied)
     return points
 
 
-def green_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+def _points_by_day(
+    conn: sqlite3.Connection, schedule: dict[int, tuple[int, int, int]]
+) -> dict[str, dict[str, int]]:
     rows = conn.execute(
         """
         SELECT e.game_date, e.player, r.idx, r.score
@@ -105,11 +110,21 @@ def green_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
     for row in rows:
         rounds.setdefault((row["game_date"], row["idx"]), []).append((row["player"], row["score"]))
     totals: dict[str, dict[str, int]] = {}
-    for (game_date, _), scores in rounds.items():
+    for (game_date, idx), scores in rounds.items():
+        if idx not in schedule:
+            continue
         day = totals.setdefault(game_date, {})
-        for player, points in _round_green_points(scores).items():
+        for player, points in _round_points(scores, schedule[idx]).items():
             day[player] = day.get(player, 0) + points
     return totals
+
+
+def green_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+    return _points_by_day(conn, _GREEN_SCHEDULE)
+
+
+def polka_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+    return _points_by_day(conn, _POLKA_SCHEDULE)
 
 
 def green_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:

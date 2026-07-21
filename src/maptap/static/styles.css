@@ -149,19 +149,6 @@ th.rounds-group { text-align: center; }
 th.round, td.round { width: 2.6em; padding-left: 6px; padding-right: 6px; }
 tr.hidden { display: none; }
 
-.podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
-.podium-place { padding: 22px 18px; border-top: 3px solid var(--line); }
-.podium-place .rank { font-family: var(--mono); font-weight: 700; font-size: 13px; }
-.podium-place .who { font-size: 22px; font-weight: 800; margin: 6px 0 10px; }
-.podium-place .big { font-family: var(--mono); font-weight: 700; font-size: 26px; }
-.podium-place .meta { color: var(--ink-dim); font-size: 12px; margin-top: 6px; }
-.rank-1 { border-top-color: var(--gold); }
-.rank-1 .rank { color: var(--gold); }
-.rank-2 { border-top-color: var(--silver); }
-.rank-2 .rank { color: var(--silver); }
-.rank-3 { border-top-color: var(--bronze); }
-.rank-3 .rank { color: var(--bronze); }
-
 .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
 .medal-1 { color: var(--gold); }
 .medal-2 { color: var(--silver); }
@@ -169,6 +156,5 @@ tr.hidden { display: none; }
 
 @media (max-width: 720px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
-  .podium { grid-template-columns: 1fr; }
   .tabs { order: 3; width: 100%; margin: 0; justify-content: center; }
 }

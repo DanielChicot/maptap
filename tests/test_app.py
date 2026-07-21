@@ -182,22 +182,6 @@ def test_league_has_player_filter_chips(tmp_path, monkeypatch):
         assert f'class="chip active" data-player="{name}"' in response.text
 
 
-def test_players_page_has_podium(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/players")
-    assert "podium" in response.text
-    assert "rank-1" in response.text
-    assert "rank-2" in response.text
-    assert ">862</div>" in response.text  # Finn's total cumulative as the podium score
-    assert "2 wins · best 485 · 5 ×100s · 2 days" in response.text
-
-
 def test_players_table_is_sortable(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

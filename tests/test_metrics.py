@@ -71,12 +71,6 @@ def test_daily_leaderboard_ranks_per_day():
     assert june15["standings"][1]["player"] == "Daniel Chicot"
 
 
-def test_hero_stats_cumulative_leader():
-    stats = hero_stats(_conn())
-    assert stats["cumulative_leader"] == "Finn Risdon"
-    assert stats["cumulative_leader_total"] == 862
-
-
 @pytest.mark.parametrize(
     ("today", "week_best", "week_best_player", "last_week_best", "last_week_best_player"),
     [
@@ -96,10 +90,22 @@ def test_hero_stats_weekly_bests(today, week_best, week_best_player, last_week_b
     assert stats["last_week_best_player"] == last_week_best_player
 
 
-def test_hero_stats_green_jersey_leader():
-    stats = hero_stats(_conn())
-    assert stats["green_leader"] == "Finn Risdon"
-    assert stats["green_leader_total"] == 37
+@pytest.mark.parametrize(
+    ("today", "green", "green_player", "polka", "polka_player"),
+    [
+        # Sunday after the week holding all entries: best single days are the
+        # solo 20s (Steve June 19, Finn June 20); ties break alphabetically.
+        (datetime.date(2026, 6, 21), 20, "Finn Risdon", 20, "Finn Risdon"),
+        # Friday inside the entries' week: the prior week is empty.
+        (datetime.date(2026, 6, 19), None, None, None, None),
+    ],
+)
+def test_hero_stats_last_week_jersey_bests(today, green, green_player, polka, polka_player):
+    stats = hero_stats(_conn(), today=today)
+    assert stats["last_week_best_green"] == green
+    assert stats["last_week_best_green_player"] == green_player
+    assert stats["last_week_best_polka"] == polka
+    assert stats["last_week_best_polka_player"] == polka_player
 
 
 def test_hero_stats_highest_cumulative():
@@ -547,12 +553,6 @@ def test_daily_leaderboard_polka_sort_ranks_by_polka_points():
     assert yellow_order == ["Flat Track", "Climber"]
 
 
-def test_hero_stats_polka_dot_leader():
-    stats = hero_stats(_conn())
-    assert stats["polka_leader"] == "Finn Risdon"
-    assert stats["polka_leader_total"] == 36
-
-
 def test_hero_stats_empty_database():
     stats = hero_stats(connect())
     assert stats == {
@@ -560,16 +560,14 @@ def test_hero_stats_empty_database():
         "highest_maptap_player": None,
         "leader": None,
         "leader_total": None,
-        "cumulative_leader": None,
-        "cumulative_leader_total": None,
-        "green_leader": None,
-        "green_leader_total": None,
-        "polka_leader": None,
-        "polka_leader_total": None,
         "highest_cumulative": None,
         "highest_cumulative_player": None,
         "week_best": None,
         "week_best_player": None,
         "last_week_best": None,
         "last_week_best_player": None,
+        "last_week_best_green": None,
+        "last_week_best_green_player": None,
+        "last_week_best_polka": None,
+        "last_week_best_polka_player": None,
     }

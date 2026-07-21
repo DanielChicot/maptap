@@ -146,7 +146,7 @@ def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
         assert "/static/theme.js" in response.text
 
 
-def test_index_hero_shows_leader(tmp_path, monkeypatch):
+def test_index_hero_shows_stat_cards(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -155,15 +155,15 @@ def test_index_hero_shows_leader(tmp_path, monkeypatch):
 
     client = TestClient(app)
     response = client.get("/")
-    assert "Finn Risdon" in response.text
-    assert "Yellow Jersey Leader" in response.text
-    assert "862 total yellow" in response.text
     assert "Highest Yellow" in response.text
     assert ">485<" in response.text
-    assert "Green Jersey Leader" in response.text
-    assert "37 total green" in response.text
     assert "This Week's Best" in response.text
     assert "Last Week's Best" in response.text
+    assert "Last Week's Best Green" in response.text
+    assert "Last Week's Best Polka" in response.text
+    assert "Yellow Jersey Leader" not in response.text
+    assert "Green Jersey Leader" not in response.text
+    assert "Polka Dot Leader" not in response.text
     assert "Highest MapTap" not in response.text
     assert "MapTap Leader" not in response.text
 
@@ -266,19 +266,6 @@ def test_players_page_shows_polka_totals(tmp_path, monkeypatch):
     response = client.get("/players")
     assert "Polka Pts" in response.text
     assert ">36<" in response.text  # Finn's total polka points
-
-
-def test_index_hero_shows_polka_dot_leader(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/")
-    assert "Polka Dot Leader" in response.text
-    assert "36 total polka" in response.text
 
 
 def test_days_unknown_sort_falls_back_to_cumulative(tmp_path, monkeypatch):

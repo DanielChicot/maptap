@@ -47,19 +47,14 @@
                     <div class="sub">{{ stats.last_week_best_player or 'no rides' }}</div>
                 </div>
                 <div class="stat">
-                    <div class="label">Yellow Jersey Leader</div>
-                    <div class="value" style="font-size:22px">{{ stats.cumulative_leader or '—' }}</div>
-                    <div class="sub">{{ stats.cumulative_leader_total if stats.cumulative_leader_total is not none else '—' }} total yellow</div>
+                    <div class="label">Last Week's Best Green</div>
+                    <div class="value">{{ stats.last_week_best_green if stats.last_week_best_green is not none else '—' }}</div>
+                    <div class="sub">{{ stats.last_week_best_green_player or 'no rides' }}</div>
                 </div>
                 <div class="stat">
-                    <div class="label">Green Jersey Leader</div>
-                    <div class="value" style="font-size:22px">{{ stats.green_leader or '—' }}</div>
-                    <div class="sub">{{ stats.green_leader_total if stats.green_leader_total is not none else '—' }} total green</div>
-                </div>
-                <div class="stat">
-                    <div class="label">Polka Dot Leader</div>
-                    <div class="value" style="font-size:22px">{{ stats.polka_leader or '—' }}</div>
-                    <div class="sub">{{ stats.polka_leader_total if stats.polka_leader_total is not none else '—' }} total polka</div>
+                    <div class="label">Last Week's Best Polka</div>
+                    <div class="value">{{ stats.last_week_best_polka if stats.last_week_best_polka is not none else '—' }}</div>
+                    <div class="sub">{{ stats.last_week_best_polka_player or 'no rides' }}</div>
                 </div>
             </div>
         </div>

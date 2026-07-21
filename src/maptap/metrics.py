@@ -267,6 +267,18 @@ def _best_yellow_between(
     ).fetchone()
 
 
+def _best_points_between(
+    by_day: dict[str, dict[str, int]], start: datetime.date, end: datetime.date
+) -> tuple[int, str] | None:
+    candidates = [
+        (points, player)
+        for day, players in by_day.items()
+        if start.isoformat() <= day < end.isoformat()
+        for player, points in players.items()
+    ]
+    return min(candidates, key=lambda pp: (-pp[0], pp[1])) if candidates else None
+
+
 def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> dict:
     highest = conn.execute(
         "SELECT player, maptap_score FROM entries "
@@ -286,25 +298,14 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         """
     ).fetchone()
 
-    cumulative_leader = conn.execute(
-        """
-        SELECT e.player, SUM(r.score) AS total
-        FROM entries e JOIN rounds r ON r.entry_id = e.id
-        GROUP BY e.player ORDER BY total DESC, e.player ASC LIMIT 1
-        """
-    ).fetchone()
-
-    green_totals = green_jersey_totals(conn)
-    green_leader = min(green_totals.items(), key=lambda pt: (-pt[1], pt[0])) if green_totals else None
-
-    polka_totals = polka_jersey_totals(conn)
-    polka_leader = min(polka_totals.items(), key=lambda pt: (-pt[1], pt[0])) if polka_totals else None
-
     today = today or datetime.date.today()
     # Weeks run Sunday to Saturday.
     week_start = today - datetime.timedelta(days=(today.weekday() + 1) % 7)
+    last_week_start = week_start - datetime.timedelta(days=7)
     week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
-    last_week_best = _best_yellow_between(conn, week_start - datetime.timedelta(days=7), week_start)
+    last_week_best = _best_yellow_between(conn, last_week_start, week_start)
+    last_week_green = _best_points_between(green_points_by_day(conn), last_week_start, week_start)
+    last_week_polka = _best_points_between(polka_points_by_day(conn), last_week_start, week_start)
 
     return {
         "highest_maptap": highest["maptap_score"] if highest else None,
@@ -313,14 +314,12 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "highest_cumulative_player": highest_cumulative["player"] if highest_cumulative else None,
         "leader": leader["player"] if leader else None,
         "leader_total": leader["total"] if leader else None,
-        "cumulative_leader": cumulative_leader["player"] if cumulative_leader else None,
-        "cumulative_leader_total": cumulative_leader["total"] if cumulative_leader else None,
-        "green_leader": green_leader[0] if green_leader else None,
-        "green_leader_total": green_leader[1] if green_leader else None,
-        "polka_leader": polka_leader[0] if polka_leader else None,
-        "polka_leader_total": polka_leader[1] if polka_leader else None,
         "week_best": week_best["total"] if week_best else None,
         "week_best_player": week_best["player"] if week_best else None,
         "last_week_best": last_week_best["total"] if last_week_best else None,
         "last_week_best_player": last_week_best["player"] if last_week_best else None,
+        "last_week_best_green": last_week_green[0] if last_week_green else None,
+        "last_week_best_green_player": last_week_green[1] if last_week_green else None,
+        "last_week_best_polka": last_week_polka[0] if last_week_polka else None,
+        "last_week_best_polka_player": last_week_polka[1] if last_week_polka else None,
     }

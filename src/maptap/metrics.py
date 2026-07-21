@@ -15,6 +15,7 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
         """
     ).fetchall()
     green = green_points_by_day(conn)
+    polka = polka_points_by_day(conn)
     result = []
     for row in rows:
         rounds = conn.execute(
@@ -28,6 +29,7 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
                 "cumulative": row["cumulative"],
                 "hundreds": row["hundreds"],
                 "green": green[row["game_date"]][row["player"]],
+                "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
                 "rounds": [r["score"] for r in rounds],
             }
         )
@@ -58,6 +60,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
 
     wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
     green = green_jersey_totals(conn)
+    polka = polka_jersey_totals(conn)
     return [
         {
             "player": row["player"],
@@ -69,6 +72,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "days_played": row["days_played"],
             "wins": wins.get(row["player"], 0),
             "green_points": green.get(row["player"], 0),
+            "polka_points": polka.get(row["player"], 0),
         }
         for row in base
     ]
@@ -213,6 +217,7 @@ _DAILY_SORT_KEYS = {
     "cumulative": lambda s: (-s["cumulative"], -s["maptap_score"], s["player"]),
     "maptap": lambda s: (-s["maptap_score"], -s["cumulative"], s["player"]),
     "green": lambda s: (-s["green"], -s["cumulative"], -s["maptap_score"], s["player"]),
+    "polka": lambda s: (-s["polka"], -s["cumulative"], -s["maptap_score"], s["player"]),
 }
 
 
@@ -229,6 +234,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
         """
     ).fetchall()
     green = green_points_by_day(conn)
+    polka = polka_points_by_day(conn)
     by_day: dict[str, list[dict]] = {}
     for row in rows:
         by_day.setdefault(row["game_date"], []).append(
@@ -237,6 +243,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
                 "maptap_score": row["maptap_score"],
                 "cumulative": row["cumulative"],
                 "green": green[row["game_date"]][row["player"]],
+                "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
             }
         )
     for standings in by_day.values():
@@ -294,6 +301,9 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     green_totals = green_jersey_totals(conn)
     green_leader = min(green_totals.items(), key=lambda pt: (-pt[1], pt[0])) if green_totals else None
 
+    polka_totals = polka_jersey_totals(conn)
+    polka_leader = min(polka_totals.items(), key=lambda pt: (-pt[1], pt[0])) if polka_totals else None
+
     today = today or datetime.date.today()
     # Weeks run Sunday to Saturday.
     week_start = today - datetime.timedelta(days=(today.weekday() + 1) % 7)
@@ -316,6 +326,8 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "cumulative_leader_total": cumulative_leader["total"] if cumulative_leader else None,
         "green_leader": green_leader[0] if green_leader else None,
         "green_leader_total": green_leader[1] if green_leader else None,
+        "polka_leader": polka_leader[0] if polka_leader else None,
+        "polka_leader_total": polka_leader[1] if polka_leader else None,
         "week_best": week_best["total"] if week_best else None,
         "week_best_player": week_best["player"] if week_best else None,
         "last_week_best": last_week_best["total"] if last_week_best else None,

@@ -518,6 +518,43 @@ def test_hero_stats_over_sample_export():
     assert stats["total_hundreds"] == 6
 
 
+def test_all_entries_include_polka_points():
+    rows = all_entries(_conn())
+    dan = next(r for r in rows if r["player"] == "Daniel Chicot")
+    assert dan["polka"] == 14
+
+
+def test_daily_leaderboard_standings_include_polka_points():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["polka"] == 16
+    assert june15["standings"][1]["polka"] == 14
+
+
+def test_player_summary_includes_polka_points():
+    summary = {r["player"]: r for r in player_summary(_conn())}
+    assert summary["Finn Risdon"]["polka_points"] == 36
+    assert summary["Daniel Chicot"]["polka_points"] == 14
+
+
+def test_daily_leaderboard_polka_sort_ranks_by_polka_points():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Flat Track", 800, [100, 100, 90, 90, 90]),
+        _entry_with_rounds("Climber", 700, [0, 0, 100, 100, 100]),
+    ])
+    polka_order = [s["player"] for s in daily_leaderboard(conn, sort="polka")[0]["standings"]]
+    yellow_order = [s["player"] for s in daily_leaderboard(conn)[0]["standings"]]
+    assert polka_order == ["Climber", "Flat Track"]
+    assert yellow_order == ["Flat Track", "Climber"]
+
+
+def test_hero_stats_polka_dot_leader():
+    stats = hero_stats(_conn())
+    assert stats["polka_leader"] == "Finn Risdon"
+    assert stats["polka_leader_total"] == 36
+
+
 def test_hero_stats_empty_database():
     stats = hero_stats(connect())
     assert stats == {
@@ -530,6 +567,8 @@ def test_hero_stats_empty_database():
         "cumulative_leader_total": None,
         "green_leader": None,
         "green_leader_total": None,
+        "polka_leader": None,
+        "polka_leader_total": None,
         "highest_cumulative": None,
         "highest_cumulative_player": None,
         "week_best": None,

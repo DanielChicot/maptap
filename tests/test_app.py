@@ -65,6 +65,7 @@ def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
     assert 'href="/days?sort=green"' in response.text
     assert 'href="/days"' in response.text
     assert 'href="/days?sort=maptap"' not in response.text
+    assert 'href="/days?sort=polka"' in response.text
 
 
 def test_days_sort_by_green(tmp_path, monkeypatch):
@@ -209,7 +210,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 6
+    assert response.text.count('data-sort="number"') == 7
     assert 'data-sorted="desc"' in response.text  # Total Yellow carries the default order
 
 
@@ -225,3 +226,72 @@ def test_days_page_has_day_cards(tmp_path, monkeypatch):
     assert "day-grid" in response.text
     assert "medal-1" in response.text
     assert "2026-06-20" in response.text
+
+
+def test_days_sort_by_polka(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days?sort=polka")
+    assert response.status_code == 200
+    assert "Daily wins (Polka)" in response.text
+    assert "Finn Risdon · 2" in response.text
+    assert "Steve Risdon · 1" in response.text
+
+
+def test_days_shows_polka_column(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert ">Polka<" in response.text
+    assert 'href="/days?sort=polka"' in response.text
+    assert ">16<" in response.text  # Finn's June 15 polka points
+    assert ">14<" in response.text  # Dan's June 15 polka points
+
+
+def test_index_shows_polka_column(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/")
+    assert ">Polka<" in response.text
+    assert ">16<" in response.text  # Finn's June 15 polka points
+
+
+def test_players_page_shows_polka_totals(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/players")
+    assert "Polka Pts" in response.text
+    assert ">36<" in response.text  # Finn's total polka points
+
+
+def test_index_hero_shows_polka_dot_leader(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/")
+    assert "Polka Dot Leader" in response.text
+    assert "36 total polka" in response.text

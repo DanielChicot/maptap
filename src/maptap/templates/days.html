@@ -9,9 +9,10 @@
         <span class="chip-label">Rank by</span>
         <a class="chip {% if sort == 'cumulative' %}active{% endif %}" href="/days">Yellow</a>
         <a class="chip {% if sort == 'green' %}active{% endif %}" href="/days?sort=green">Green</a>
+        <a class="chip {% if sort == 'polka' %}active{% endif %}" href="/days?sort=polka">Polka</a>
     </div>
     <div class="chips">
-        <span class="chip-label">Daily wins ({{ 'Green' if sort == 'green' else 'Yellow' }})</span>
+        <span class="chip-label">Daily wins ({{ 'Green' if sort == 'green' else 'Polka' if sort == 'polka' else 'Yellow' }})</span>
         {% for w in win_counts %}
         <span class="chip static">{{ w.player }} · {{ w.wins }}</span>
         {% endfor %}
@@ -24,7 +25,7 @@
         <table>
             <caption>{{ day.game_date }}</caption>
             <thead>
-                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th></tr>
+                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Polka</th></tr>
             </thead>
             <tbody>
                 {% for s in day.standings %}
@@ -33,6 +34,7 @@
                     <td class="txt">{{ s.player }}</td>
                     <td class="num">{{ s.cumulative }}</td>
                     <td class="num">{{ s.green }}</td>
+                    <td class="num">{{ s.polka }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

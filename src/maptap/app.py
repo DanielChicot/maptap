@@ -13,6 +13,7 @@ from maptap.metrics import (
     daily_leaderboard,
     daily_win_counts,
     green_jersey_win_counts,
+    polka_jersey_win_counts,
     hero_stats,
     player_summary,
 )
@@ -44,14 +45,15 @@ def players(request: Request):
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request, sort: str = "cumulative"):
-    if sort not in ("cumulative", "green"):
+    if sort not in ("cumulative", "green", "polka"):
         sort = "cumulative"
     with closing(_conn()) as conn:
-        win_counts = (
-            green_jersey_win_counts(conn)
-            if sort == "green"
-            else daily_win_counts(conn, metric="cumulative")
-        )
+        if sort == "green":
+            win_counts = green_jersey_win_counts(conn)
+        elif sort == "polka":
+            win_counts = polka_jersey_win_counts(conn)
+        else:
+            win_counts = daily_win_counts(conn, metric="cumulative")
         context = {
             "days": daily_leaderboard(conn, sort=sort),
             "win_counts": win_counts,

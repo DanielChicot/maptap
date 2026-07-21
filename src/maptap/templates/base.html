@@ -62,6 +62,11 @@
                     <div class="sub">{{ stats.green_leader_total if stats.green_leader_total is not none else '—' }} total green</div>
                 </div>
                 <div class="stat">
+                    <div class="label">Polka Dot Leader</div>
+                    <div class="value" style="font-size:22px">{{ stats.polka_leader or '—' }}</div>
+                    <div class="sub">{{ stats.polka_leader_total if stats.polka_leader_total is not none else '—' }} total polka</div>
+                </div>
+                <div class="stat">
                     <div class="label">Total 100s</div>
                     <div class="value">{{ stats.total_hundreds }}</div>
                     <div class="sub">perfect rounds</div>

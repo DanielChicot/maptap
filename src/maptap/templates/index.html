@@ -22,6 +22,7 @@
                 <th class="txt" rowspan="2" data-sort="text">Date</th>
                 <th class="num" rowspan="2" data-sort="number" data-sorted="desc">Yellow</th>
                 <th class="num" rowspan="2" data-sort="number">Green</th>
+                <th class="num" rowspan="2" data-sort="number">Polka</th>
                 <th class="num" rowspan="2" data-sort="number">#100s</th>
                 <th class="rounds-group" colspan="5">Rounds</th>
             </tr>
@@ -40,6 +41,7 @@
                 <td class="txt num">{{ e.game_date }}</td>
                 <td class="num">{{ e.cumulative }}</td>
                 <td class="num">{{ e.green }}</td>
+                <td class="num">{{ e.polka }}</td>
                 <td class="num">{{ e.hundreds }}</td>
                 {% for r in e.rounds %}<td class="round num">{{ r }}</td>{% endfor %}
             </tr>

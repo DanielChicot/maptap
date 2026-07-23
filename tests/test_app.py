@@ -21,7 +21,7 @@ def test_index_lists_entries(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    response = client.get("/")
+    response = client.get("/league")
     assert response.status_code == 200
     assert "Daniel Chicot" in response.text
     assert ">485<" in response.text  # Finn's June 15 yellow tops the table
@@ -137,7 +137,7 @@ def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    for path in ("/", "/players", "/days"):
+    for path in ("/league", "/players", "/days"):
         response = client.get(path)
         assert response.status_code == 200
         assert "MAP" in response.text
@@ -176,7 +176,7 @@ def test_league_has_player_filter_chips(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    response = client.get("/")
+    response = client.get("/league")
     assert 'data-player="all"' not in response.text
     for name in ("Daniel Chicot", "Finn Risdon", "Steve Risdon"):
         assert f'class="chip active" data-player="{name}"' in response.text
@@ -250,7 +250,7 @@ def test_index_shows_polka_column(tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    response = client.get("/")
+    response = client.get("/league")
     assert ">Polka<" in response.text
     assert ">16<" in response.text  # Finn's June 15 polka points
 
@@ -266,6 +266,35 @@ def test_players_page_shows_polka_totals(tmp_path, monkeypatch):
     response = client.get("/players")
     assert "Polka Pts" in response.text
     assert ">36<" in response.text  # Finn's total polka points
+
+
+def test_root_redirects_to_days(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    redirect = client.get("/", follow_redirects=False)
+    assert redirect.status_code == 307
+    assert redirect.headers["location"] == "/days"
+    response = client.get("/")
+    assert "By day" in response.text
+
+
+def test_nav_lists_days_first(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert 'href="/league">League</a>' in response.text
+    assert response.text.index(">Days</a>") < response.text.index(">League</a>")
+    assert response.text.index(">League</a>") < response.text.index(">Players</a>")
 
 
 def test_days_unknown_sort_falls_back_to_cumulative(tmp_path, monkeypatch):

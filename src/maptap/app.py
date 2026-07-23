@@ -3,7 +3,7 @@ import pathlib
 from contextlib import closing
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -29,8 +29,13 @@ def _conn():
     return connect(os.environ.get("MAPTAP_DB", "maptap.db"))
 
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
+@app.get("/")
+def index():
+    return RedirectResponse("/days")
+
+
+@app.get("/league", response_class=HTMLResponse)
+def league(request: Request):
     with closing(_conn()) as conn:
         context = {"entries": all_entries(conn), "stats": hero_stats(conn), "active": "league"}
     return templates.TemplateResponse(request, "index.html", context)

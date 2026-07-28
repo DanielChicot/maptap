@@ -149,12 +149,14 @@ th.rounds-group { text-align: center; }
 th.round, td.round { width: 2.6em; padding-left: 6px; padding-right: 6px; }
 tr.hidden { display: none; }
 
-.day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
+.day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 12px; margin-top: 16px; }
+.day-grid th, .day-grid td { padding-left: 8px; padding-right: 8px; }
 .medal-1 { color: var(--gold); }
 .medal-2 { color: var(--silver); }
 .medal-3 { color: var(--bronze); }
 
 @media (max-width: 720px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .day-grid { grid-template-columns: 1fr; }
   .tabs { order: 3; width: 100%; margin: 0; justify-content: center; }
 }

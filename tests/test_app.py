@@ -341,6 +341,19 @@ def test_days_shows_hundreds_column(tmp_path, monkeypatch):
     assert ">4<" in response.text  # Finn's June 15 hundreds
 
 
+def test_days_tables_mark_combative_rider(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert ">Combative</th>" in response.text
+    assert response.text.count("✓") == 3  # one combative rider per sample day
+
+
 def test_players_page_shows_combative_wins(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

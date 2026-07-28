@@ -294,6 +294,9 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
             }
         )
     for standings in by_day.values():
+        best = max(standing["combative"] for standing in standings)
+        for standing in standings:
+            standing["combative_rider"] = standing["combative"] == best
         standings.sort(key=sort_key)
         for position, standing in enumerate(standings, start=1):
             standing["position"] = position

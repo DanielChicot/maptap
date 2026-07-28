@@ -627,6 +627,27 @@ def test_daily_leaderboard_standings_include_hundreds():
     assert june15["standings"][1]["hundreds"] == 1
 
 
+def test_daily_leaderboard_standings_flag_combative_rider():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["combative_rider"] is True   # Finn
+    assert june15["standings"][1]["combative_rider"] is False  # Dan
+    assert all(s["combative_rider"] for s in days["2026-06-19"]["standings"])  # solo day
+
+
+def test_daily_leaderboard_flags_identical_round_sets_as_joint_combative():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [100, 90, 80, 70, 60]),
+        _entry_with_rounds("Bob", 880, [60, 70, 80, 90, 100]),
+        _entry_with_rounds("Carol", 800, [90, 90, 90, 90, 90]),
+    ])
+    standings = {s["player"]: s for s in daily_leaderboard(conn)[0]["standings"]}
+    assert standings["Alice"]["combative_rider"] is True
+    assert standings["Bob"]["combative_rider"] is True
+    assert standings["Carol"]["combative_rider"] is False
+
+
 def test_daily_leaderboard_combative_sort_ranks_by_rounds():
     conn = connect()
     upsert_entries(conn, [

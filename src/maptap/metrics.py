@@ -184,6 +184,47 @@ def polka_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
     return _jersey_win_counts(conn, polka_points_by_day(conn))
 
 
+def combative_key(scores: list[int]) -> tuple[int, ...]:
+    return tuple(sorted(scores, reverse=True))
+
+
+def _combative_keys_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, tuple[int, ...]]]:
+    rows = conn.execute(
+        """
+        SELECT e.game_date, e.player, r.score
+        FROM entries e
+        JOIN rounds r ON r.entry_id = e.id
+        """
+    ).fetchall()
+    scores: dict[str, dict[str, list[int]]] = {}
+    for row in rows:
+        scores.setdefault(row["game_date"], {}).setdefault(row["player"], []).append(row["score"])
+    return {
+        day: {player: combative_key(rounds) for player, rounds in players.items()}
+        for day, players in scores.items()
+    }
+
+
+def combative_riders_by_day(conn: sqlite3.Connection) -> dict[str, list[str]]:
+    riders: dict[str, list[str]] = {}
+    for day, keys in _combative_keys_by_day(conn).items():
+        best = max(keys.values())
+        riders[day] = sorted(player for player, key in keys.items() if key == best)
+    return riders
+
+
+def combative_win_counts(conn: sqlite3.Connection) -> list[dict]:
+    players = [row["player"] for row in conn.execute("SELECT DISTINCT player FROM entries")]
+    wins = {player: 0 for player in players}
+    for winners in combative_riders_by_day(conn).values():
+        for player in winners:
+            wins[player] += 1
+    return [
+        {"player": player, "wins": count}
+        for player, count in sorted(wins.items(), key=lambda pw: (-pw[1], pw[0]))
+    ]
+
+
 def daily_win_counts(conn: sqlite3.Connection, metric: str = "cumulative") -> list[dict]:
     ranking = {
         "cumulative": "cumulative DESC, maptap DESC",

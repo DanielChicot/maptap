@@ -6,6 +6,8 @@ import pytest
 from maptap.db import connect, upsert_entries
 from maptap.metrics import (
     all_entries,
+    combative_riders_by_day,
+    combative_win_counts,
     daily_leaderboard,
     daily_win_counts,
     green_jersey_totals,
@@ -375,6 +377,65 @@ def test_polka_jersey_win_tie_broken_by_cumulative():
     ])
     counts = {r["player"]: r["wins"] for r in polka_jersey_win_counts(conn)}
     assert counts == {"Polka Tied High": 1, "Polka Tied Low": 0}
+
+
+@pytest.mark.parametrize(
+    ("game_date", "expected"),
+    [
+        ("2026-06-15", ["Finn Risdon"]),  # four 100s beat one
+        ("2026-06-19", ["Steve Risdon"]),  # solo day
+        ("2026-06-20", ["Finn Risdon"]),   # solo day
+    ],
+)
+def test_combative_riders_by_day_over_sample_export(game_date, expected):
+    assert combative_riders_by_day(_conn())[game_date] == expected
+
+
+@pytest.mark.parametrize(
+    ("rounds_by_player", "expected"),
+    [
+        # Tied on 100s: the next best round decides (95 beats 90).
+        (
+            {"Alice": [100, 100, 95, 60, 50], "Bob": [100, 100, 90, 80, 70]},
+            ["Alice"],
+        ),
+        # Identical score sets in any order credit both players.
+        (
+            {"Alice": [100, 90, 80, 70, 60], "Bob": [60, 70, 80, 90, 100]},
+            ["Alice", "Bob"],
+        ),
+        # No 100s at all: the best single round still wins the day.
+        (
+            {"Alice": [99, 50, 50, 50, 50], "Bob": [98, 98, 98, 98, 98]},
+            ["Alice"],
+        ),
+    ],
+)
+def test_combative_riders_tie_breaks(rounds_by_player, expected):
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds(player, 900, scores)
+        for player, scores in rounds_by_player.items()
+    ])
+    assert combative_riders_by_day(conn)["2026-06-15"] == expected
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 2),
+        ("Steve Risdon", 1),
+        ("Daniel Chicot", 0),
+    ],
+)
+def test_combative_win_counts_over_sample_export(player, expected):
+    counts = {r["player"]: r["wins"] for r in combative_win_counts(_conn())}
+    assert counts[player] == expected
+
+
+def test_combative_win_counts_ordered_by_wins_then_player():
+    players = [r["player"] for r in combative_win_counts(_conn())]
+    assert players == ["Finn Risdon", "Steve Risdon", "Daniel Chicot"]
 
 
 @pytest.mark.parametrize(

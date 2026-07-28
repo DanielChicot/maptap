@@ -614,6 +614,46 @@ def test_daily_leaderboard_polka_sort_ranks_by_polka_points():
     assert yellow_order == ["Flat Track", "Climber"]
 
 
+def test_player_summary_includes_combative_wins():
+    summary = {r["player"]: r for r in player_summary(_conn())}
+    assert summary["Finn Risdon"]["combative_wins"] == 2
+    assert summary["Daniel Chicot"]["combative_wins"] == 0
+
+
+def test_daily_leaderboard_standings_include_hundreds():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["hundreds"] == 4
+    assert june15["standings"][1]["hundreds"] == 1
+
+
+def test_daily_leaderboard_combative_sort_ranks_by_rounds():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Steady", 800, [90, 90, 90, 90, 90]),
+        _entry_with_rounds("One Hit", 700, [100, 0, 0, 0, 0]),
+    ])
+    combative_order = [s["player"] for s in daily_leaderboard(conn, sort="combative")[0]["standings"]]
+    yellow_order = [s["player"] for s in daily_leaderboard(conn)[0]["standings"]]
+    assert combative_order == ["One Hit", "Steady"]
+    assert yellow_order == ["Steady", "One Hit"]
+
+
+@pytest.mark.parametrize(
+    ("today", "wins", "player"),
+    [
+        # Sunday after the week holding all entries: Finn took 2 of the 3 awards.
+        (datetime.date(2026, 6, 21), 2, "Finn Risdon"),
+        # Friday inside the entries' week: the prior week is empty.
+        (datetime.date(2026, 6, 19), None, None),
+    ],
+)
+def test_hero_stats_last_week_combative(today, wins, player):
+    stats = hero_stats(_conn(), today=today)
+    assert stats["last_week_combative"] == wins
+    assert stats["last_week_combative_player"] == player
+
+
 def test_hero_stats_empty_database():
     stats = hero_stats(connect())
     assert stats == {
@@ -631,4 +671,6 @@ def test_hero_stats_empty_database():
         "last_week_best_green_player": None,
         "last_week_best_polka": None,
         "last_week_best_polka_player": None,
+        "last_week_combative": None,
+        "last_week_combative_player": None,
     }

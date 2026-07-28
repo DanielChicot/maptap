@@ -61,6 +61,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
     wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
     green = green_jersey_totals(conn)
     polka = polka_jersey_totals(conn)
+    combative = {row["player"]: row["wins"] for row in combative_win_counts(conn)}
     return [
         {
             "player": row["player"],
@@ -73,6 +74,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "wins": wins.get(row["player"], 0),
             "green_points": green.get(row["player"], 0),
             "polka_points": polka.get(row["player"], 0),
+            "combative_wins": combative.get(row["player"], 0),
         }
         for row in base
     ]
@@ -259,6 +261,7 @@ _DAILY_SORT_KEYS = {
     "maptap": lambda s: (-s["maptap_score"], -s["cumulative"], s["player"]),
     "green": lambda s: (-s["green"], -s["cumulative"], -s["maptap_score"], s["player"]),
     "polka": lambda s: (-s["polka"], -s["cumulative"], -s["maptap_score"], s["player"]),
+    "combative": lambda s: ([-score for score in s["combative"]], s["player"]),
 }
 
 
@@ -276,6 +279,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
     ).fetchall()
     green = green_points_by_day(conn)
     polka = polka_points_by_day(conn)
+    keys = _combative_keys_by_day(conn)
     by_day: dict[str, list[dict]] = {}
     for row in rows:
         by_day.setdefault(row["game_date"], []).append(
@@ -285,6 +289,8 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
                 "cumulative": row["cumulative"],
                 "green": green[row["game_date"]][row["player"]],
                 "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
+                "combative": keys[row["game_date"]][row["player"]],
+                "hundreds": sum(1 for score in keys[row["game_date"]][row["player"]] if score == 100),
             }
         )
     for standings in by_day.values():
@@ -347,6 +353,14 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     last_week_best = _best_yellow_between(conn, last_week_start, week_start)
     last_week_green = _best_points_between(green_points_by_day(conn), last_week_start, week_start)
     last_week_polka = _best_points_between(polka_points_by_day(conn), last_week_start, week_start)
+    last_week_awards: dict[str, int] = {}
+    for day, winners in combative_riders_by_day(conn).items():
+        if last_week_start.isoformat() <= day < week_start.isoformat():
+            for player in winners:
+                last_week_awards[player] = last_week_awards.get(player, 0) + 1
+    last_week_combative = (
+        min(last_week_awards.items(), key=lambda pw: (-pw[1], pw[0])) if last_week_awards else None
+    )
 
     return {
         "highest_maptap": highest["maptap_score"] if highest else None,
@@ -363,4 +377,6 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "last_week_best_green_player": last_week_green[1] if last_week_green else None,
         "last_week_best_polka": last_week_polka[0] if last_week_polka else None,
         "last_week_best_polka_player": last_week_polka[1] if last_week_polka else None,
+        "last_week_combative": last_week_combative[1] if last_week_combative else None,
+        "last_week_combative_player": last_week_combative[0] if last_week_combative else None,
     }

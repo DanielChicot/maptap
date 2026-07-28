@@ -6,6 +6,8 @@ import pytest
 from maptap.db import connect, upsert_entries
 from maptap.metrics import (
     all_entries,
+    combative_points_by_day,
+    combative_points_totals,
     combative_riders_by_day,
     combative_win_counts,
     daily_leaderboard,
@@ -614,38 +616,85 @@ def test_daily_leaderboard_polka_sort_ranks_by_polka_points():
     assert yellow_order == ["Flat Track", "Climber"]
 
 
-def test_player_summary_includes_combative_wins():
+def test_player_summary_includes_combative_points():
     summary = {r["player"]: r for r in player_summary(_conn())}
-    assert summary["Finn Risdon"]["combative_wins"] == 2
-    assert summary["Daniel Chicot"]["combative_wins"] == 0
+    assert summary["Finn Risdon"]["combative_points"] == 5
+    assert summary["Daniel Chicot"]["combative_points"] == 1
+    assert summary["Steve Risdon"]["combative_points"] == 0
 
 
-def test_daily_leaderboard_standings_include_hundreds():
-    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
-    june15 = days["2026-06-15"]
-    assert june15["standings"][0]["hundreds"] == 4
-    assert june15["standings"][1]["hundreds"] == 1
+@pytest.mark.parametrize(
+    ("game_date", "player", "expected"),
+    [
+        ("2026-06-15", "Finn Risdon", 4),   # strictly most 100s: no bonus
+        ("2026-06-15", "Daniel Chicot", 1),
+        ("2026-06-19", "Steve Risdon", 0),  # solo day, no 100s: no bonus
+        ("2026-06-20", "Finn Risdon", 1),   # solo day: no bonus
+    ],
+)
+def test_combative_points_by_day_over_sample_export(game_date, player, expected):
+    assert combative_points_by_day(_conn())[game_date][player] == expected
 
 
-def test_daily_leaderboard_standings_flag_combative_rider():
-    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
-    june15 = days["2026-06-15"]
-    assert june15["standings"][0]["combative_rider"] is True   # Finn
-    assert june15["standings"][1]["combative_rider"] is False  # Dan
-    assert all(s["combative_rider"] for s in days["2026-06-19"]["standings"])  # solo day
-
-
-def test_daily_leaderboard_flags_identical_round_sets_as_joint_combative():
+@pytest.mark.parametrize(
+    ("rounds_by_player", "expected"),
+    [
+        # Tied on 100s, so the tie-break winner takes the extra half point.
+        (
+            {"Alice": [100, 100, 95, 60, 50], "Bob": [100, 100, 90, 80, 70]},
+            {"Alice": 2.5, "Bob": 2},
+        ),
+        # Identical sets share the award: both take the half point.
+        (
+            {"Alice": [100, 90, 80, 70, 60], "Bob": [60, 70, 80, 90, 100], "Carol": [90, 90, 90, 90, 90]},
+            {"Alice": 1.5, "Bob": 1.5, "Carol": 0},
+        ),
+        # No 100s: everyone shares the max, so the walk-down winner gets the half.
+        (
+            {"Alice": [99, 50, 50, 50, 50], "Bob": [98, 98, 98, 98, 98]},
+            {"Alice": 0.5, "Bob": 0},
+        ),
+    ],
+)
+def test_combative_points_bonus_on_tie_break(rounds_by_player, expected):
     conn = connect()
     upsert_entries(conn, [
-        _entry_with_rounds("Alice", 900, [100, 90, 80, 70, 60]),
-        _entry_with_rounds("Bob", 880, [60, 70, 80, 90, 100]),
-        _entry_with_rounds("Carol", 800, [90, 90, 90, 90, 90]),
+        _entry_with_rounds(player, 900, scores)
+        for player, scores in rounds_by_player.items()
     ])
-    standings = {s["player"]: s for s in daily_leaderboard(conn)[0]["standings"]}
-    assert standings["Alice"]["combative_rider"] is True
-    assert standings["Bob"]["combative_rider"] is True
-    assert standings["Carol"]["combative_rider"] is False
+    assert combative_points_by_day(conn)["2026-06-15"] == expected
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        ("Finn Risdon", 5),
+        ("Daniel Chicot", 1),
+        ("Steve Risdon", 0),
+    ],
+)
+def test_combative_points_totals_over_sample_export(player, expected):
+    assert combative_points_totals(_conn())[player] == expected
+
+
+def test_combative_points_totals_render_whole_sums_as_ints():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [100, 100, 95, 60, 50]),
+        _entry_with_rounds("Bob", 880, [100, 100, 90, 80, 70]),
+        _entry_with_rounds("Alice", 900, [100, 95, 60, 50, 40], game_date=datetime.date(2026, 6, 16)),
+        _entry_with_rounds("Bob", 880, [100, 90, 80, 70, 60], game_date=datetime.date(2026, 6, 16)),
+    ])
+    totals = combative_points_totals(conn)
+    assert totals["Alice"] == 4  # 2.5 + 1.5 collapses to a clean int
+    assert isinstance(totals["Alice"], int)
+
+
+def test_daily_leaderboard_standings_include_combative_points():
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    june15 = days["2026-06-15"]
+    assert june15["standings"][0]["combative_points"] == 4
+    assert june15["standings"][1]["combative_points"] == 1
 
 
 def test_daily_leaderboard_combative_sort_ranks_by_rounds():

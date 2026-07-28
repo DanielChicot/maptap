@@ -26,7 +26,7 @@
         <table>
             <caption>{{ day.game_date }}</caption>
             <thead>
-                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Polka</th><th class="num">100s</th><th class="num">Combative</th></tr>
+                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Polka</th><th class="num">Combative</th></tr>
             </thead>
             <tbody>
                 {% for s in day.standings %}
@@ -36,8 +36,7 @@
                     <td class="num">{{ s.cumulative }}</td>
                     <td class="num">{{ s.green }}</td>
                     <td class="num">{{ s.polka }}</td>
-                    <td class="num">{{ s.hundreds }}</td>
-                    <td class="num">{{ '✓' if s.combative_rider else '' }}</td>
+                    <td class="num">{{ s.combative_points }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

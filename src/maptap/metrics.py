@@ -44,13 +44,10 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
                MAX(r_sum.cumulative) AS best_cumulative,
                SUM(e.maptap_score) AS total_maptap,
                SUM(r_sum.cumulative) AS total_cumulative,
-               SUM(r_sum.hundreds) AS total_hundreds,
                COUNT(*) AS days_played
         FROM entries e
         JOIN (
-            SELECT entry_id,
-                   SUM(score) AS cumulative,
-                   SUM(CASE WHEN score = 100 THEN 1 ELSE 0 END) AS hundreds
+            SELECT entry_id, SUM(score) AS cumulative
             FROM rounds GROUP BY entry_id
         ) r_sum ON r_sum.entry_id = e.id
         GROUP BY e.player
@@ -61,7 +58,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
     wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
     green = green_jersey_totals(conn)
     polka = polka_jersey_totals(conn)
-    combative = {row["player"]: row["wins"] for row in combative_win_counts(conn)}
+    combative = combative_points_totals(conn)
     return [
         {
             "player": row["player"],
@@ -69,12 +66,11 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "best_cumulative": row["best_cumulative"],
             "total_maptap": row["total_maptap"],
             "total_cumulative": row["total_cumulative"],
-            "total_hundreds": row["total_hundreds"],
             "days_played": row["days_played"],
             "wins": wins.get(row["player"], 0),
             "green_points": green.get(row["player"], 0),
             "polka_points": polka.get(row["player"], 0),
-            "combative_wins": combative.get(row["player"], 0),
+            "combative_points": combative.get(row["player"], 0),
         }
         for row in base
     ]
@@ -227,6 +223,28 @@ def combative_win_counts(conn: sqlite3.Connection) -> list[dict]:
     ]
 
 
+# Combative points: your 100s for the day, plus half a point if you take the
+# award on the walk-down tie-break (i.e. the day's best 100 count is shared).
+def combative_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int | float]]:
+    points: dict[str, dict[str, int | float]] = {}
+    for day, keys in _combative_keys_by_day(conn).items():
+        hundreds = {player: sum(1 for score in key if score == 100) for player, key in keys.items()}
+        tie_broken = list(hundreds.values()).count(max(hundreds.values())) > 1
+        best = max(keys.values())
+        points[day] = {
+            player: hundreds[player] + 0.5 if tie_broken and keys[player] == best else hundreds[player]
+            for player in keys
+        }
+    return points
+
+
+def combative_points_totals(conn: sqlite3.Connection) -> dict[str, int | float]:
+    return {
+        player: int(total) if total == int(total) else total
+        for player, total in _jersey_totals(combative_points_by_day(conn)).items()
+    }
+
+
 def daily_win_counts(conn: sqlite3.Connection, metric: str = "cumulative") -> list[dict]:
     ranking = {
         "cumulative": "cumulative DESC, maptap DESC",
@@ -261,7 +279,7 @@ _DAILY_SORT_KEYS = {
     "maptap": lambda s: (-s["maptap_score"], -s["cumulative"], s["player"]),
     "green": lambda s: (-s["green"], -s["cumulative"], -s["maptap_score"], s["player"]),
     "polka": lambda s: (-s["polka"], -s["cumulative"], -s["maptap_score"], s["player"]),
-    "combative": lambda s: ([-score for score in s["combative"]], s["player"]),
+    "combative": lambda s: (-s["combative_points"], -s["cumulative"], -s["maptap_score"], s["player"]),
 }
 
 
@@ -279,7 +297,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
     ).fetchall()
     green = green_points_by_day(conn)
     polka = polka_points_by_day(conn)
-    keys = _combative_keys_by_day(conn)
+    combative = combative_points_by_day(conn)
     by_day: dict[str, list[dict]] = {}
     for row in rows:
         by_day.setdefault(row["game_date"], []).append(
@@ -289,14 +307,10 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
                 "cumulative": row["cumulative"],
                 "green": green[row["game_date"]][row["player"]],
                 "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
-                "combative": keys[row["game_date"]][row["player"]],
-                "hundreds": sum(1 for score in keys[row["game_date"]][row["player"]] if score == 100),
+                "combative_points": combative[row["game_date"]][row["player"]],
             }
         )
     for standings in by_day.values():
-        best = max(standing["combative"] for standing in standings)
-        for standing in standings:
-            standing["combative_rider"] = standing["combative"] == best
         standings.sort(key=sort_key)
         for position, standing in enumerate(standings, start=1):
             standing["position"] = position

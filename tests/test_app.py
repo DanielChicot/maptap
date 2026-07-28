@@ -196,7 +196,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 8
+    assert response.text.count('data-sort="number"') == 7
     assert 'data-sorted="desc"' in response.text  # Total Yellow carries the default order
 
 
@@ -327,7 +327,7 @@ def test_days_sort_by_combative(tmp_path, monkeypatch):
     assert "Steve Risdon · 1" in response.text
 
 
-def test_days_shows_hundreds_column(tmp_path, monkeypatch):
+def test_days_shows_combative_points_column(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -336,25 +336,14 @@ def test_days_shows_hundreds_column(tmp_path, monkeypatch):
 
     client = TestClient(app)
     response = client.get("/days")
-    assert ">100s<" in response.text
+    assert response.text.count(">Combative</th>") == 3  # one per sample day card
+    assert ">100s<" not in response.text
+    assert "✓" not in response.text
     assert 'href="/days?sort=combative"' in response.text
-    assert ">4<" in response.text  # Finn's June 15 hundreds
+    assert ">4<" in response.text  # Finn's June 15 combative points
 
 
-def test_days_tables_mark_combative_rider(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/days")
-    assert ">Combative</th>" in response.text
-    assert response.text.count("✓") == 3  # one combative rider per sample day
-
-
-def test_players_page_shows_combative_wins(tmp_path, monkeypatch):
+def test_players_page_shows_combative_points(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -364,3 +353,5 @@ def test_players_page_shows_combative_wins(tmp_path, monkeypatch):
     client = TestClient(app)
     response = client.get("/players")
     assert ">Combative</th>" in response.text
+    assert ">5<" in response.text  # Finn's season combative points
+    assert "Total #100s" not in response.text

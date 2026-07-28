@@ -56,6 +56,11 @@
                     <div class="value">{{ stats.last_week_best_polka if stats.last_week_best_polka is not none else '—' }}</div>
                     <div class="sub">{{ stats.last_week_best_polka_player or 'no rides' }}</div>
                 </div>
+                <div class="stat">
+                    <div class="label">Last Week's Combative</div>
+                    <div class="value">{{ stats.last_week_combative if stats.last_week_combative is not none else '—' }}</div>
+                    <div class="sub">{{ stats.last_week_combative_player or 'no rides' }}</div>
+                </div>
             </div>
         </div>
     </header>

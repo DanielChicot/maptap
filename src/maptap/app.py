@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from maptap.db import connect
 from maptap.metrics import (
     all_entries,
+    combative_win_counts,
     daily_leaderboard,
     daily_win_counts,
     green_jersey_win_counts,
@@ -50,13 +51,15 @@ def players(request: Request):
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request, sort: str = "cumulative"):
-    if sort not in ("cumulative", "green", "polka"):
+    if sort not in ("cumulative", "green", "polka", "combative"):
         sort = "cumulative"
     with closing(_conn()) as conn:
         if sort == "green":
             win_counts = green_jersey_win_counts(conn)
         elif sort == "polka":
             win_counts = polka_jersey_win_counts(conn)
+        elif sort == "combative":
+            win_counts = combative_win_counts(conn)
         else:
             win_counts = daily_win_counts(conn, metric="cumulative")
         context = {

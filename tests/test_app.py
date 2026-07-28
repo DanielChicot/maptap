@@ -66,6 +66,7 @@ def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
     assert 'href="/days"' in response.text
     assert 'href="/days?sort=maptap"' not in response.text
     assert 'href="/days?sort=polka"' in response.text
+    assert 'href="/days?sort=combative"' in response.text
 
 
 def test_days_sort_by_green(tmp_path, monkeypatch):
@@ -161,6 +162,7 @@ def test_index_hero_shows_stat_cards(tmp_path, monkeypatch):
     assert "Last Week's Best" in response.text
     assert "Last Week's Best Green" in response.text
     assert "Last Week's Best Polka" in response.text
+    assert "Last Week's Combative" in response.text
     assert "Yellow Jersey Leader" not in response.text
     assert "Green Jersey Leader" not in response.text
     assert "Polka Dot Leader" not in response.text
@@ -194,7 +196,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 7
+    assert response.text.count('data-sort="number"') == 8
     assert 'data-sorted="desc"' in response.text  # Total Yellow carries the default order
 
 
@@ -308,3 +310,44 @@ def test_days_unknown_sort_falls_back_to_cumulative(tmp_path, monkeypatch):
     response = client.get("/days?sort=bogus")
     assert response.status_code == 200
     assert "Daily wins (Yellow)" in response.text
+
+
+def test_days_sort_by_combative(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days?sort=combative")
+    assert response.status_code == 200
+    assert "Daily wins (Combative)" in response.text
+    assert "Finn Risdon · 2" in response.text
+    assert "Steve Risdon · 1" in response.text
+
+
+def test_days_shows_hundreds_column(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/days")
+    assert ">100s<" in response.text
+    assert 'href="/days?sort=combative"' in response.text
+    assert ">4<" in response.text  # Finn's June 15 hundreds
+
+
+def test_players_page_shows_combative_wins(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get("/players")
+    assert ">Combative</th>" in response.text

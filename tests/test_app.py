@@ -1,5 +1,7 @@
 import pathlib
+from html.parser import HTMLParser
 
+import pytest
 from fastapi.testclient import TestClient
 
 from maptap.db import connect, upsert_entries
@@ -11,6 +13,22 @@ def _build_db(path):
     conn = connect(str(path))
     upsert_entries(conn, entries_from_text(SAMPLE_EXPORT))
     conn.close()
+
+
+class _StartTagCollector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.collected = []
+
+    def handle_starttag(self, tag, attrs):
+        self.collected.append((tag, attrs))
+
+
+def _start_tags(markup):
+    """Start tags a browser would actually build from this markup, as (tag, attrs)."""
+    collector = _StartTagCollector()
+    collector.feed(markup)
+    return collector.collected
 
 
 def test_index_lists_entries(tmp_path, monkeypatch):
@@ -355,3 +373,22 @@ def test_players_page_shows_combative_points(tmp_path, monkeypatch):
     assert ">Combative</th>" in response.text
     assert ">5<" in response.text  # Finn's season combative points
     assert "Total #100s" not in response.text
+
+
+@pytest.mark.parametrize("route", ["/league", "/players", "/days"])
+def test_tables_parse_with_a_real_thead(route, tmp_path, monkeypatch):
+    """sort.js reads table.tBodies[0]; an unclosed <table> tag puts headers there instead."""
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    tags = _start_tags(client.get(route).text)
+
+    tables = [attrs for tag, attrs in tags if tag == "table"]
+    assert tables, f"{route} renders no table"
+    swallowed = [name for attrs in tables for name, _ in attrs if name.startswith("<")]
+    assert not swallowed, f"{route} has an unclosed <table> tag, swallowing {swallowed}"
+    assert any(tag == "thead" for tag, _ in tags), f"{route} renders no <thead> element"

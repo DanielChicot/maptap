@@ -21,6 +21,22 @@ _MONTHS = {
     "september": 9, "october": 10, "november": 11, "december": 12,
 }
 
+# WhatsApp exports the sender's current display name, which changes when a
+# contact is renamed or unsaved (falling back to a phone number). Map every
+# known variant onto one canonical name so a player stays one row.
+ALIASES = {
+    "+44 7513 547056": "Arthur Brindle",
+    "Dan Chicot": "Daniel Chicot",
+    "Finn": "Finn Risdon",
+    "Johnny Williams": "Jonny Williams",
+    "Steve R": "Steve Risdon",
+}
+
+
+def canonical_player(name: str) -> str:
+    name = name.strip()
+    return ALIASES.get(name, name)
+
 
 def _messages(text):
     current = None
@@ -44,7 +60,7 @@ def _parse_rounds(blob):
 
 
 def _entry_from_message(match, lines):
-    sender = match.group("sender").strip()
+    sender = canonical_player(match.group("sender"))
     msg_year = int(match.group("year"))
     body = "\n".join(lines)
 

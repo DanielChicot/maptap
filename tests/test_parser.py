@@ -3,7 +3,7 @@ import logging
 
 import pytest
 
-from maptap.parser import entries_from_text
+from maptap.parser import canonical_player, entries_from_text
 
 _TOO_FEW_ROUNDS = """\
 15/06/2026, 07:37 - Daniel Chicot: www.maptap.gg June 15
@@ -14,6 +14,15 @@ Final score: 199
 _NO_FINAL_SCORE = """\
 15/06/2026, 07:37 - Daniel Chicot: www.maptap.gg June 15
 100🎯 99🎯 98🎯 95🏅 86🌟
+"""
+
+_RENAMED_SENDERS = """\
+15/06/2026, 07:37 - Dan Chicot: www.maptap.gg June 15
+100🎯 99🎯 98🎯 95🏅 86🌟
+Final score: 938
+15/06/2026, 07:41 - +44 7513 547056: www.maptap.gg June 15
+100🎯 99🎯 98🎯 95🏅 86🌟
+Final score: 931
 """
 
 
@@ -49,6 +58,15 @@ def test_handles_trailing_text_after_final_score(sample_export):
     )
     assert finn_20.maptap_score == 833
     assert finn_20.rounds[0].score == 4
+
+
+def test_renamed_senders_map_to_canonical_players():
+    entries = entries_from_text(_RENAMED_SENDERS)
+    assert [e.player for e in entries] == ["Daniel Chicot", "Arthur Brindle"]
+
+
+def test_unknown_sender_keeps_own_name():
+    assert canonical_player("  Someone New  ") == "Someone New"
 
 
 @pytest.mark.parametrize("malformed", [_TOO_FEW_ROUNDS, _NO_FINAL_SCORE])

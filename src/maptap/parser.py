@@ -25,6 +25,7 @@ _MONTHS = {
 # contact is renamed or unsaved (falling back to a phone number). Map every
 # known variant onto one canonical name so a player stays one row.
 ALIASES = {
+    "+33 7 45 76 09 78": "Finn Risdon",
     "+44 7513 547056": "Arthur Brindle",
     "Dan Chicot": "Daniel Chicot",
     "Finn": "Finn Risdon",

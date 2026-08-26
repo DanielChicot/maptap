@@ -65,6 +65,21 @@ def test_renamed_senders_map_to_canonical_players():
     assert [e.player for e in entries] == ["Daniel Chicot", "Arthur Brindle"]
 
 
+@pytest.mark.parametrize(
+    ("sender", "expected"),
+    [
+        ("+44 7513 547056", "Arthur Brindle"),
+        ("Dan Chicot", "Daniel Chicot"),
+        ("Finn", "Finn Risdon"),
+        ("+33 7 45 76 09 78", "Finn Risdon"),
+        ("Johnny Williams", "Jonny Williams"),
+        ("Steve R", "Steve Risdon"),
+    ],
+)
+def test_known_sender_maps_to_canonical_player(sender, expected):
+    assert canonical_player(sender) == expected
+
+
 def test_unknown_sender_keeps_own_name():
     assert canonical_player("  Someone New  ") == "Someone New"
 

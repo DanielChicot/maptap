@@ -30,13 +30,16 @@
             </thead>
             <tbody>
                 {% for s in day.standings %}
-                <tr>
+                <tr role="button" tabindex="0" aria-expanded="false" aria-label="Show rounds for {{ s.player }}">
                     <td class="num medal-{{ s.position }}">{{ s.position }}</td>
-                    <td class="txt">{{ s.player }}</td>
+                    <td class="txt"><span class="caret" aria-hidden="true">▸</span>{{ s.player }}</td>
                     <td class="num">{{ s.cumulative }}</td>
                     <td class="num">{{ s.green }}</td>
                     <td class="num">{{ s.polka }}</td>
                     <td class="num">{{ s.combative_points }}</td>
+                </tr>
+                <tr class="rounds-row" hidden>
+                    <td colspan="6">{% for r in s.rounds %}<span class="rnd">R{{ loop.index }} {{ r.score }} {{ r.emoji }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -44,4 +47,7 @@
     </div>
     {% endfor %}
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/expand.js"></script>
 {% endblock %}

@@ -151,6 +151,13 @@ tr.hidden { display: none; }
 
 .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 12px; margin-top: 16px; }
 .day-grid th, .day-grid td { padding-left: 8px; padding-right: 8px; }
+tr[aria-expanded] { cursor: pointer; }
+tr[aria-expanded]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.caret { display: inline-block; width: 1.1em; color: var(--ink-faint); transition: transform 0.15s, color 0.15s; }
+tr[aria-expanded="true"] .caret { transform: rotate(90deg); color: var(--accent); }
+.rounds-row td { font-family: var(--mono); font-size: 13px; color: var(--ink-dim); padding-top: 2px; padding-bottom: 10px; }
+.rounds-row:hover { background: transparent; }
+.rnd { white-space: nowrap; }
 .medal-1 { color: var(--gold); }
 .medal-2 { color: var(--silver); }
 .medal-3 { color: var(--bronze); }

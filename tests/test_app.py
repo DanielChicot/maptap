@@ -392,3 +392,28 @@ def test_tables_parse_with_a_real_thead(route, tmp_path, monkeypatch):
     swallowed = [name for attrs in tables for name, _ in attrs if name.startswith("<")]
     assert not swallowed, f"{route} has an unclosed <table> tag, swallowing {swallowed}"
     assert any(tag == "thead" for tag, _ in tags), f"{route} renders no <thead> element"
+
+
+def test_days_renders_a_hidden_rounds_row_per_standing(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    response = TestClient(app).get("/days")
+    tags = _start_tags(response.text)
+
+    rounds_rows = [dict(a) for t, a in tags if t == "tr" and "rounds-row" in (dict(a).get("class") or "")]
+    assert len(rounds_rows) == 4  # one per entry in SAMPLE_EXPORT
+    assert all("hidden" in row for row in rounds_rows)
+
+    toggles = [dict(a) for t, a in tags if t == "tr" and dict(a).get("aria-expanded") is not None]
+    assert len(toggles) == 4
+    assert all(t["aria-expanded"] == "false" and t["role"] == "button" and t["tabindex"] == "0" for t in toggles)
+
+    spans = [dict(a) for t, a in tags if t == "td" and dict(a).get("colspan") == "6"]
+    assert len(spans) == 4
+
+    assert "R1 4 🤮" in response.text  # Finn's June 20 opener, score and emoji together
+    assert "/static/expand.js" in response.text

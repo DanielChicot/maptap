@@ -744,3 +744,17 @@ def test_hero_stats_empty_database():
         "last_week_combative": None,
         "last_week_combative_player": None,
     }
+
+
+@pytest.mark.parametrize(
+    ("game_date", "player", "expected"),
+    [
+        ("2026-06-15", "Daniel Chicot", [(100, "🎯"), (99, "🎯"), (98, "🎯"), (95, "🏅"), (86, "🌟")]),
+        ("2026-06-19", "Steve Risdon", [(82, "👏"), (96, "🔥"), (99, "🎯"), (77, "👏"), (59, "🫣")]),
+        ("2026-06-20", "Finn Risdon", [(4, "🤮"), (100, "🎯"), (90, "👑"), (94, "🏅"), (89, "👑")]),
+    ],
+)
+def test_daily_leaderboard_standings_carry_rounds_in_order(game_date, player, expected):
+    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
+    standing = next(s for s in days[game_date]["standings"] if s["player"] == player)
+    assert [(r["score"], r["emoji"]) for r in standing["rounds"]] == expected

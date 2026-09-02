@@ -283,6 +283,23 @@ _DAILY_SORT_KEYS = {
 }
 
 
+def _rounds_by_day_and_player(conn: sqlite3.Connection) -> dict[tuple[str, str], list[dict]]:
+    rows = conn.execute(
+        """
+        SELECT e.game_date, e.player, r.score, r.emoji
+        FROM entries e
+        JOIN rounds r ON r.entry_id = e.id
+        ORDER BY e.game_date, e.player, r.idx
+        """
+    ).fetchall()
+    rounds: dict[tuple[str, str], list[dict]] = {}
+    for row in rows:
+        rounds.setdefault((row["game_date"], row["player"]), []).append(
+            {"score": row["score"], "emoji": row["emoji"]}
+        )
+    return rounds
+
+
 def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> list[dict]:
     sort_key = _DAILY_SORT_KEYS[sort]
     rows = conn.execute(
@@ -298,6 +315,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
     green = green_points_by_day(conn)
     polka = polka_points_by_day(conn)
     combative = combative_points_by_day(conn)
+    rounds = _rounds_by_day_and_player(conn)
     by_day: dict[str, list[dict]] = {}
     for row in rows:
         by_day.setdefault(row["game_date"], []).append(
@@ -308,6 +326,7 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
                 "green": green[row["game_date"]][row["player"]],
                 "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
                 "combative_points": combative[row["game_date"]][row["player"]],
+                "rounds": rounds[(row["game_date"], row["player"])],
             }
         )
     for standings in by_day.values():

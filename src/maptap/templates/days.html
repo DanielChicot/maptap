@@ -39,7 +39,7 @@
                     <td class="num">{{ s.combative_points }}</td>
                 </tr>
                 <tr class="rounds-row" hidden>
-                    <td colspan="6">{% for r in s.rounds %}<span class="rnd">R{{ loop.index }} {{ r.score }} {{ r.emoji }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</td>
+                    <td colspan="6">{% for r in s.rounds %}<span class="rnd">{{ r.score }} {{ r.emoji }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

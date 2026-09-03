@@ -1,4 +1,5 @@
 import pathlib
+import re
 from html.parser import HTMLParser
 
 import pytest
@@ -415,5 +416,6 @@ def test_days_renders_a_hidden_rounds_row_per_standing(tmp_path, monkeypatch):
     spans = [dict(a) for t, a in tags if t == "td" and dict(a).get("colspan") == "6"]
     assert len(spans) == 4
 
-    assert "R1 4 🤮" in response.text  # Finn's June 20 opener, score and emoji together
+    visible_text = re.sub(r"<[^>]+>", "", response.text)
+    assert "4 🤮 · 100 🎯 · 90 👑 · 94 🏅 · 89 👑" in visible_text  # Finn's June 20, no round labels
     assert "/static/expand.js" in response.text

@@ -29,7 +29,7 @@
         <div class="wrap">
             <span class="hero-tag">maptap.gg · daily league</span>
             <h1><span class="out">Map</span> <span class="em">Tappers</span></h1>
-            <p class="hero-sub">Three players, five rounds a day. Every score from the group chat, ranked and totted up.</p>
+            <p class="hero-sub">{{ stats.player_count | number_word }} player{{ '' if stats.player_count == 1 else 's' }}, five rounds a day. Every score from the group chat, ranked and totted up.</p>
             <div class="stat-row">
                 <div class="stat">
                     <div class="label">Highest Yellow</div>

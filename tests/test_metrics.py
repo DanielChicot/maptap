@@ -727,6 +727,7 @@ def test_hero_stats_last_week_combative(today, wins, player):
 def test_hero_stats_empty_database():
     stats = hero_stats(connect())
     assert stats == {
+        "player_count": 0,
         "highest_maptap": None,
         "highest_maptap_player": None,
         "leader": None,
@@ -758,3 +759,8 @@ def test_daily_leaderboard_standings_carry_rounds_in_order(game_date, player, ex
     days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
     standing = next(s for s in days[game_date]["standings"] if s["player"] == player)
     assert [(r["score"], r["emoji"]) for r in standing["rounds"]] == expected
+
+
+def test_hero_stats_counts_distinct_players():
+    stats = hero_stats(_conn())
+    assert stats["player_count"] == 3  # Dan, Finn and Steve in SAMPLE_EXPORT

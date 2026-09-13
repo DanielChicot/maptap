@@ -20,7 +20,19 @@ from maptap.metrics import (
 )
 
 _BASE = pathlib.Path(__file__).parent
+_NUMBER_WORDS = (
+    "Zero", "One", "Two", "Three", "Four", "Five", "Six",
+    "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve",
+)
+
+
+def number_word(count: int) -> str:
+    """The count spelled out and capitalised, or its digits once past twelve."""
+    return _NUMBER_WORDS[count] if 0 <= count < len(_NUMBER_WORDS) else str(count)
+
+
 templates = Jinja2Templates(directory=str(_BASE / "templates"))
+templates.env.filters["number_word"] = number_word
 
 app = FastAPI(title="Map Tappers League")
 app.mount("/static", StaticFiles(directory=str(_BASE / "static")), name="static")

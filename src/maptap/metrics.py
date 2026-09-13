@@ -362,6 +362,10 @@ def _best_points_between(
     return min(candidates, key=lambda pp: (-pp[0], pp[1])) if candidates else None
 
 
+def player_count(conn: sqlite3.Connection) -> int:
+    return conn.execute("SELECT COUNT(DISTINCT player) AS n FROM entries").fetchone()["n"]
+
+
 def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> dict:
     highest = conn.execute(
         "SELECT player, maptap_score FROM entries "
@@ -399,6 +403,7 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     )
 
     return {
+        "player_count": player_count(conn),
         "highest_maptap": highest["maptap_score"] if highest else None,
         "highest_maptap_player": highest["player"] if highest else None,
         "highest_cumulative": highest_cumulative["total"] if highest_cumulative else None,

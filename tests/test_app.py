@@ -419,3 +419,27 @@ def test_days_renders_a_hidden_rounds_row_per_standing(tmp_path, monkeypatch):
     visible_text = re.sub(r"<[^>]+>", "", response.text)
     assert "4 🤮 · 100 🎯 · 90 👑 · 94 🏅 · 89 👑" in visible_text  # Finn's June 20, no round labels
     assert "/static/expand.js" in response.text
+
+
+@pytest.mark.parametrize(
+    ("count", "expected"),
+    [
+        (0, "Zero"), (1, "One"), (3, "Three"), (5, "Five"), (12, "Twelve"), (13, "13"), (40, "40"),
+    ],
+)
+def test_number_word_spells_small_counts(count, expected):
+    from maptap.app import number_word
+
+    assert number_word(count) == expected
+
+
+def test_hero_subtitle_counts_the_players(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    response = TestClient(app).get("/days")
+    assert "Three players, five rounds a day." in response.text
+    assert "Three player," not in response.text  # plural agrees with the count

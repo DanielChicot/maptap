@@ -9,11 +9,10 @@
         <span class="chip-label">Rank by</span>
         <a class="chip {% if sort == 'cumulative' %}active{% endif %}" href="/days">Yellow</a>
         <a class="chip {% if sort == 'green' %}active{% endif %}" href="/days?sort=green">Green</a>
-        <a class="chip {% if sort == 'polka' %}active{% endif %}" href="/days?sort=polka">Polka</a>
         <a class="chip {% if sort == 'combative' %}active{% endif %}" href="/days?sort=combative">Combative</a>
     </div>
     <div class="chips">
-        <span class="chip-label">Daily wins ({{ {'green': 'Green', 'polka': 'Polka', 'combative': 'Combative'}.get(sort, 'Yellow') }})</span>
+        <span class="chip-label">Daily wins ({{ {'green': 'Green', 'combative': 'Combative'}.get(sort, 'Yellow') }})</span>
         {% for w in win_counts %}
         <span class="chip static">{{ w.player }} · {{ w.wins }}</span>
         {% endfor %}
@@ -26,7 +25,7 @@
         <table>
             <caption>{{ day.game_date }}</caption>
             <thead>
-                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Polka</th><th class="num">Combative</th></tr>
+                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Combative</th></tr>
             </thead>
             <tbody>
                 {% for s in day.standings %}
@@ -35,11 +34,10 @@
                     <td class="txt"><span class="caret" aria-hidden="true">▸</span>{{ s.player }}</td>
                     <td class="num">{{ s.cumulative }}</td>
                     <td class="num">{{ s.green }}</td>
-                    <td class="num">{{ s.polka }}</td>
                     <td class="num">{{ s.combative_points }}</td>
                 </tr>
                 <tr class="rounds-row" hidden>
-                    <td colspan="6">{% for r in s.rounds %}<span class="rnd">{{ r.score }} {{ r.emoji }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</td>
+                    <td colspan="5">{% for r in s.rounds %}<span class="rnd">{{ r.score }} {{ r.emoji }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

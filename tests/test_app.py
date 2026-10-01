@@ -84,7 +84,7 @@ def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
     assert 'href="/days?sort=green"' in response.text
     assert 'href="/days"' in response.text
     assert 'href="/days?sort=maptap"' not in response.text
-    assert 'href="/days?sort=polka"' in response.text
+    assert 'href="/days?sort=polka"' not in response.text
     assert 'href="/days?sort=combative"' in response.text
 
 
@@ -168,7 +168,7 @@ def test_index_hero_shows_stat_cards(tmp_path, monkeypatch):
     assert "This Week's Best" in response.text
     assert "Last Week's Best" in response.text
     assert "Last Week's Best Green" in response.text
-    assert "Last Week's Best Polka" in response.text
+    assert "Last Week's Best Polka" not in response.text
     assert "Last Week's Combative" in response.text
     assert "Yellow Jersey Leader" not in response.text
     assert "Green Jersey Leader" not in response.text
@@ -203,7 +203,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 10
+    assert response.text.count('data-sort="number"') == 8
     assert 'data-sort="number" data-sorted="desc">Avg Yellow<' in response.text  # mean yellow carries the default order
 
 
@@ -220,50 +220,6 @@ def test_days_page_has_day_cards(tmp_path, monkeypatch):
     assert "day-grid" in response.text
     assert "medal-1" in response.text
     assert "2026-06-20" in response.text
-
-
-def test_days_sort_by_polka(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/days?sort=polka")
-    assert response.status_code == 200
-    assert "Daily wins (Polka)" in response.text
-    assert "Finn Risdon · 2" in response.text
-    assert "Steve Risdon · 1" in response.text
-
-
-def test_days_shows_polka_column(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/days")
-    assert ">Polka<" in response.text
-    assert 'href="/days?sort=polka"' in response.text
-    assert ">16<" in response.text  # Finn's June 15 polka points
-    assert ">14<" in response.text  # Dan's June 15 polka points
-
-
-def test_index_shows_polka_column(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/league")
-    assert ">Polka<" in response.text
-    assert ">16<" in response.text  # Finn's June 15 polka points
-
 
 
 def test_root_redirects_to_days(tmp_path, monkeypatch):
@@ -377,7 +333,7 @@ def test_days_renders_a_hidden_rounds_row_per_standing(tmp_path, monkeypatch):
     assert len(toggles) == 4
     assert all(t["aria-expanded"] == "false" and t["role"] == "button" and t["tabindex"] == "0" for t in toggles)
 
-    spans = [dict(a) for t, a in tags if t == "td" and dict(a).get("colspan") == "6"]
+    spans = [dict(a) for t, a in tags if t == "td" and dict(a).get("colspan") == "5"]
     assert len(spans) == 4
 
     visible_text = re.sub(r"<[^>]+>", "", response.text)
@@ -428,8 +384,8 @@ def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeyp
     headers, _, order = _players_table(TestClient(app).get("/players").text)
     assert headers == [
         "Player",
-        "Best Yellow", "Best Green", "Best Polka", "Best Combative",
-        "Avg Yellow", "Avg Green", "Avg Polka", "Avg Combative",
+        "Best Yellow", "Best Green", "Best Combative",
+        "Avg Yellow", "Avg Green", "Avg Combative",
         "Days", "Wins",
     ]
     assert order == ["Daniel Chicot", "Finn Risdon", "Steve Risdon"]  # by mean yellow
@@ -438,10 +394,10 @@ def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeyp
 @pytest.mark.parametrize(
     ("player", "expected"),
     [
-        # Finn's best green and polka come from June 20, his best combative from June 15.
-        ("Finn Risdon", ["485", "20", "20", "4", "431.0", "18.5", "18.0", "2.5", "2", "2"]),
-        ("Daniel Chicot", ["478", "13", "14", "1", "478.0", "13.0", "14.0", "1.0", "1", "0"]),
-        ("Steve Risdon", ["413", "20", "20", "0", "413.0", "20.0", "20.0", "0.0", "1", "1"]),
+        # Finn's best green comes from June 20, his best combative from June 15.
+        ("Finn Risdon", ["485", "20", "4", "431.0", "18.5", "2.5", "2", "2"]),
+        ("Daniel Chicot", ["478", "13", "1", "478.0", "13.0", "1.0", "1", "0"]),
+        ("Steve Risdon", ["413", "20", "0", "413.0", "20.0", "0.0", "1", "1"]),
     ],
 )
 def test_players_page_row(player, expected, tmp_path, monkeypatch):
@@ -453,4 +409,28 @@ def test_players_page_row(player, expected, tmp_path, monkeypatch):
 
     _, rows, _ = _players_table(TestClient(app).get("/players").text)
     assert rows[player] == expected
+
+
+@pytest.mark.parametrize("route", ["/days", "/days?sort=green", "/days?sort=combative", "/league", "/players"])
+def test_no_page_mentions_polka(route, tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    assert "polka" not in TestClient(app).get(route).text.lower()
+
+
+def test_old_polka_sort_link_falls_back_to_yellow(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    response = TestClient(app).get("/days?sort=polka")
+    assert response.status_code == 200
+    assert 'class="chip active" href="/days">Yellow<' in response.text
+    assert "Daily wins (Yellow)" in response.text
 

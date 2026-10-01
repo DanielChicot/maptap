@@ -17,9 +17,6 @@ from maptap.metrics import (
     green_points_by_day,
     hero_stats,
     player_summary,
-    polka_jersey_totals,
-    polka_jersey_win_counts,
-    polka_points_by_day,
 )
 from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
@@ -95,21 +92,19 @@ def test_hero_stats_weekly_bests(today, week_best, week_best_player, last_week_b
 
 
 @pytest.mark.parametrize(
-    ("today", "green", "green_player", "polka", "polka_player"),
+    ("today", "green", "green_player"),
     [
         # Sunday after the week holding all entries: best single days are the
         # solo 20s (Steve June 19, Finn June 20); ties break alphabetically.
-        (datetime.date(2026, 6, 21), 20, "Finn Risdon", 20, "Finn Risdon"),
+        (datetime.date(2026, 6, 21), 20, "Finn Risdon"),
         # Friday inside the entries' week: the prior week is empty.
-        (datetime.date(2026, 6, 19), None, None, None, None),
+        (datetime.date(2026, 6, 19), None, None),
     ],
 )
-def test_hero_stats_last_week_jersey_bests(today, green, green_player, polka, polka_player):
+def test_hero_stats_last_week_jersey_bests(today, green, green_player):
     stats = hero_stats(_conn(), today=today)
     assert stats["last_week_best_green"] == green
     assert stats["last_week_best_green_player"] == green_player
-    assert stats["last_week_best_polka"] == polka
-    assert stats["last_week_best_polka_player"] == polka_player
 
 
 def test_hero_stats_highest_cumulative():
@@ -345,43 +340,6 @@ def test_green_jersey_win_tie_broken_by_cumulative():
 
 
 @pytest.mark.parametrize(
-    ("player", "expected"),
-    [
-        ("Finn Risdon", 36),
-        ("Steve Risdon", 20),
-        ("Daniel Chicot", 14),
-    ],
-)
-def test_polka_jersey_totals_over_sample_export(player, expected):
-    assert polka_jersey_totals(_conn())[player] == expected
-
-
-@pytest.mark.parametrize(
-    ("player", "expected"),
-    [
-        ("Finn Risdon", 2),
-        ("Steve Risdon", 1),
-        ("Daniel Chicot", 0),
-    ],
-)
-def test_polka_jersey_win_counts_over_sample_export(player, expected):
-    counts = {r["player"]: r["wins"] for r in polka_jersey_win_counts(_conn())}
-    assert counts[player] == expected
-
-
-def test_polka_jersey_win_tie_broken_by_cumulative():
-    conn = connect()
-    upsert_entries(conn, [
-        # Both score 15 polka (3 + one round won at 8 + one lost at 4);
-        # High's rounds 1-2 lift cumulative without touching polka.
-        _entry_with_rounds("Polka Tied Low", 900, [90, 90, 90, 100, 90]),
-        _entry_with_rounds("Polka Tied High", 880, [100, 90, 90, 90, 100]),
-    ])
-    counts = {r["player"]: r["wins"] for r in polka_jersey_win_counts(conn)}
-    assert counts == {"Polka Tied High": 1, "Polka Tied Low": 0}
-
-
-@pytest.mark.parametrize(
     ("game_date", "expected"),
     [
         ("2026-06-15", ["Finn Risdon"]),  # four 100s beat one
@@ -440,59 +398,6 @@ def test_combative_win_counts_ordered_by_wins_then_player():
     assert players == ["Finn Risdon", "Steve Risdon", "Daniel Chicot"]
 
 
-@pytest.mark.parametrize(
-    ("game_date", "player", "expected"),
-    [
-        ("2026-06-15", "Finn Risdon", 16),   # r3: 4, r4: 8, r5: 4 (Dan 86 beats Finn 85)
-        ("2026-06-15", "Daniel Chicot", 14),  # r3: 2, r4: 4, r5: 8
-        ("2026-06-19", "Steve Risdon", 20),   # solo day: 4 + 8 + 8
-        ("2026-06-20", "Finn Risdon", 20),    # solo day
-    ],
-)
-def test_polka_points_by_day_over_sample_export(game_date, player, expected):
-    points = polka_points_by_day(_conn())
-    assert points[game_date][player] == expected
-
-
-def test_polka_points_ignore_first_two_rounds():
-    conn = connect()
-    upsert_entries(conn, [
-        _entry_with_rounds("Sprinter", 900, [100, 100, 0, 0, 0]),
-        _entry_with_rounds("Climber", 800, [0, 0, 100, 100, 100]),
-    ])
-    points = polka_points_by_day(conn)["2026-06-15"]
-    assert points == {"Climber": 20, "Sprinter": 10}
-
-
-@pytest.mark.parametrize(
-    ("rounds_by_player", "expected"),
-    [
-        # Two-way tie for first every round: (4+2)//2=3, then (8+4)//2=6 twice.
-        (
-            {"Alice": [90, 90, 90, 90, 90], "Bob": [90, 90, 90, 90, 90], "Carol": [80, 80, 80, 80, 80]},
-            {"Alice": 15, "Bob": 15, "Carol": 0},
-        ),
-        # Three-way tie every round: (4+2+0)//3=2, then (8+4+0)//3=4 twice.
-        (
-            {"Alice": [90, 90, 90, 90, 90], "Bob": [90, 90, 90, 90, 90], "Carol": [90, 90, 90, 90, 90]},
-            {"Alice": 10, "Bob": 10, "Carol": 10},
-        ),
-        # Tie for second every round: (2+0)//2=1, then (4+0)//2=2 twice.
-        (
-            {"Alice": [100, 100, 100, 100, 100], "Bob": [90, 90, 90, 90, 90], "Carol": [90, 90, 90, 90, 90]},
-            {"Alice": 20, "Bob": 5, "Carol": 5},
-        ),
-    ],
-)
-def test_polka_points_split_doubled_pots_between_tied_players(rounds_by_player, expected):
-    conn = connect()
-    upsert_entries(conn, [
-        _entry_with_rounds(player, 900, scores)
-        for player, scores in rounds_by_player.items()
-    ])
-    assert polka_points_by_day(conn)["2026-06-15"] == expected
-
-
 def test_daily_leaderboard_standings_include_green_points():
     days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
     june15 = days["2026-06-15"]
@@ -513,18 +418,17 @@ def test_player_summary_ranked_by_average_cumulative():
 
 
 @pytest.mark.parametrize(
-    ("player", "avg_cumulative", "avg_green", "avg_polka", "avg_combative"),
+    ("player", "avg_cumulative", "avg_green", "avg_combative"),
     [
-        ("Finn Risdon", 431.0, 18.5, 18.0, 2.5),  # two days: (485 + 377) / 2, 37 / 2, 36 / 2, 5 / 2
-        ("Daniel Chicot", 478.0, 13.0, 14.0, 1.0),
-        ("Steve Risdon", 413.0, 20.0, 20.0, 0.0),
+        ("Finn Risdon", 431.0, 18.5, 2.5),  # two days: (485 + 377) / 2, 37 / 2, 5 / 2
+        ("Daniel Chicot", 478.0, 13.0, 1.0),
+        ("Steve Risdon", 413.0, 20.0, 0.0),
     ],
 )
-def test_player_summary_averages_per_day_played(player, avg_cumulative, avg_green, avg_polka, avg_combative):
+def test_player_summary_averages_per_day_played(player, avg_cumulative, avg_green, avg_combative):
     summary = {r["player"]: r for r in player_summary(_conn())}[player]
     assert summary["avg_cumulative"] == pytest.approx(avg_cumulative)
     assert summary["avg_green"] == pytest.approx(avg_green)
-    assert summary["avg_polka"] == pytest.approx(avg_polka)
     assert summary["avg_combative"] == pytest.approx(avg_combative)
 
 
@@ -600,37 +504,6 @@ def test_hero_stats_over_sample_export():
     assert stats["highest_maptap_player"] == "Finn Risdon"
     assert stats["leader"] == "Finn Risdon"
     assert stats["leader_total"] == 1788
-
-
-def test_all_entries_include_polka_points():
-    rows = all_entries(_conn())
-    dan = next(r for r in rows if r["player"] == "Daniel Chicot")
-    assert dan["polka"] == 14
-
-
-def test_daily_leaderboard_standings_include_polka_points():
-    days = {d["game_date"]: d for d in daily_leaderboard(_conn())}
-    june15 = days["2026-06-15"]
-    assert june15["standings"][0]["polka"] == 16
-    assert june15["standings"][1]["polka"] == 14
-
-
-def test_player_summary_includes_polka_points():
-    summary = {r["player"]: r for r in player_summary(_conn())}
-    assert summary["Finn Risdon"]["polka_points"] == 36
-    assert summary["Daniel Chicot"]["polka_points"] == 14
-
-
-def test_daily_leaderboard_polka_sort_ranks_by_polka_points():
-    conn = connect()
-    upsert_entries(conn, [
-        _entry_with_rounds("Flat Track", 800, [100, 100, 90, 90, 90]),
-        _entry_with_rounds("Climber", 700, [0, 0, 100, 100, 100]),
-    ])
-    polka_order = [s["player"] for s in daily_leaderboard(conn, sort="polka")[0]["standings"]]
-    yellow_order = [s["player"] for s in daily_leaderboard(conn)[0]["standings"]]
-    assert polka_order == ["Climber", "Flat Track"]
-    assert yellow_order == ["Flat Track", "Climber"]
 
 
 def test_player_summary_includes_combative_points():
@@ -757,8 +630,6 @@ def test_hero_stats_empty_database():
         "last_week_best_player": None,
         "last_week_best_green": None,
         "last_week_best_green_player": None,
-        "last_week_best_polka": None,
-        "last_week_best_polka_player": None,
         "last_week_combative": None,
         "last_week_combative_player": None,
     }
@@ -784,16 +655,28 @@ def test_hero_stats_counts_distinct_players():
 
 
 @pytest.mark.parametrize(
-    ("player", "best_green", "best_polka", "best_combative"),
+    ("player", "best_green", "best_combative"),
     [
-        ("Finn Risdon", 20, 20, 4),  # green and polka from June 20, combative from June 15
-        ("Daniel Chicot", 13, 14, 1),
-        ("Steve Risdon", 20, 20, 0),
+        ("Finn Risdon", 20, 4),  # green from June 20, combative from June 15
+        ("Daniel Chicot", 13, 1),
+        ("Steve Risdon", 20, 0),
     ],
 )
-def test_player_summary_best_single_day_per_category(player, best_green, best_polka, best_combative):
+def test_player_summary_best_single_day_per_category(player, best_green, best_combative):
     summary = {r["player"]: r for r in player_summary(_conn())}[player]
-    assert (summary["best_green"], summary["best_polka"], summary["best_combative"]) == (
-        best_green, best_polka, best_combative,
-    )
+    assert (summary["best_green"], summary["best_combative"]) == (best_green, best_combative)
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [
+        pytest.param(lambda c: [hero_stats(c)], id="hero_stats"),
+        pytest.param(lambda c: player_summary(c), id="player_summary"),
+        pytest.param(lambda c: [s for d in daily_leaderboard(c) for s in d["standings"]], id="daily_leaderboard"),
+        pytest.param(lambda c: all_entries(c), id="all_entries"),
+    ],
+)
+def test_no_polka_keys_reach_the_templates(rows):
+    keys = {key for row in rows(_conn()) for key in row}
+    assert keys and not {key for key in keys if "polka" in key}
 

@@ -15,7 +15,6 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
         """
     ).fetchall()
     green = green_points_by_day(conn)
-    polka = polka_points_by_day(conn)
     result = []
     for row in rows:
         rounds = conn.execute(
@@ -29,7 +28,6 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
                 "cumulative": row["cumulative"],
                 "hundreds": row["hundreds"],
                 "green": green[row["game_date"]][row["player"]],
-                "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
                 "rounds": [r["score"] for r in rounds],
             }
         )
@@ -65,10 +63,8 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
 
     wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
     green = green_jersey_totals(conn)
-    polka = polka_jersey_totals(conn)
     combative = combative_points_totals(conn)
     best_green = _best_day_by_player(green_points_by_day(conn))
-    best_polka = _best_day_by_player(polka_points_by_day(conn))
     best_combative = _best_day_by_player(combative_points_by_day(conn))
     return [
         {
@@ -80,14 +76,11 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "days_played": row["days_played"],
             "wins": wins.get(row["player"], 0),
             "green_points": green.get(row["player"], 0),
-            "polka_points": polka.get(row["player"], 0),
             "combative_points": combative.get(row["player"], 0),
             "best_green": best_green.get(row["player"], 0),
-            "best_polka": best_polka.get(row["player"], 0),
             "best_combative": best_combative.get(row["player"], 0),
             "avg_cumulative": row["total_cumulative"] / row["days_played"],
             "avg_green": green.get(row["player"], 0) / row["days_played"],
-            "avg_polka": polka.get(row["player"], 0) / row["days_played"],
             "avg_combative": combative.get(row["player"], 0) / row["days_played"],
         }
         for row in base
@@ -98,9 +91,6 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
 # of the positions they jointly occupy (two-way tie for first with pot
 # (4, 2, 0): 3 each; three-way tie: 2 each; tie for second: 1 each).
 _GREEN_SCHEDULE = {idx: (4, 2, 0) for idx in range(5)}
-# Polka dot (King of the Mountains): only the last three rounds score,
-# and the final two are worth double.
-_POLKA_SCHEDULE = {2: (4, 2, 0), 3: (8, 4, 0), 4: (8, 4, 0)}
 
 
 def _round_points(scores: list[tuple[str, int]], pot: tuple[int, int, int]) -> dict[str, int]:
@@ -143,10 +133,6 @@ def green_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
     return _points_by_day(conn, _GREEN_SCHEDULE)
 
 
-def polka_points_by_day(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
-    return _points_by_day(conn, _POLKA_SCHEDULE)
-
-
 def _jersey_totals(by_day: dict[str, dict[str, int]]) -> dict[str, int]:
     totals: dict[str, int] = {}
     for day in by_day.values():
@@ -157,10 +143,6 @@ def _jersey_totals(by_day: dict[str, dict[str, int]]) -> dict[str, int]:
 
 def green_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:
     return _jersey_totals(green_points_by_day(conn))
-
-
-def polka_jersey_totals(conn: sqlite3.Connection) -> dict[str, int]:
-    return _jersey_totals(polka_points_by_day(conn))
 
 
 def _jersey_win_counts(
@@ -194,10 +176,6 @@ def _jersey_win_counts(
 
 def green_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
     return _jersey_win_counts(conn, green_points_by_day(conn))
-
-
-def polka_jersey_win_counts(conn: sqlite3.Connection) -> list[dict]:
-    return _jersey_win_counts(conn, polka_points_by_day(conn))
 
 
 def combative_key(scores: list[int]) -> tuple[int, ...]:
@@ -296,7 +274,6 @@ _DAILY_SORT_KEYS = {
     "cumulative": lambda s: (-s["cumulative"], -s["maptap_score"], s["player"]),
     "maptap": lambda s: (-s["maptap_score"], -s["cumulative"], s["player"]),
     "green": lambda s: (-s["green"], -s["cumulative"], -s["maptap_score"], s["player"]),
-    "polka": lambda s: (-s["polka"], -s["cumulative"], -s["maptap_score"], s["player"]),
     "combative": lambda s: (-s["combative_points"], -s["cumulative"], -s["maptap_score"], s["player"]),
 }
 
@@ -331,7 +308,6 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
         """
     ).fetchall()
     green = green_points_by_day(conn)
-    polka = polka_points_by_day(conn)
     combative = combative_points_by_day(conn)
     rounds = _rounds_by_day_and_player(conn)
     by_day: dict[str, list[dict]] = {}
@@ -342,7 +318,6 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
                 "maptap_score": row["maptap_score"],
                 "cumulative": row["cumulative"],
                 "green": green[row["game_date"]][row["player"]],
-                "polka": polka.get(row["game_date"], {}).get(row["player"], 0),
                 "combative_points": combative[row["game_date"]][row["player"]],
                 "rounds": rounds[(row["game_date"], row["player"])],
             }
@@ -410,7 +385,6 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
     last_week_best = _best_yellow_between(conn, last_week_start, week_start)
     last_week_green = _best_points_between(green_points_by_day(conn), last_week_start, week_start)
-    last_week_polka = _best_points_between(polka_points_by_day(conn), last_week_start, week_start)
     last_week_awards: dict[str, int] = {}
     for day, winners in combative_riders_by_day(conn).items():
         if last_week_start.isoformat() <= day < week_start.isoformat():
@@ -434,8 +408,6 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "last_week_best_player": last_week_best["player"] if last_week_best else None,
         "last_week_best_green": last_week_green[0] if last_week_green else None,
         "last_week_best_green_player": last_week_green[1] if last_week_green else None,
-        "last_week_best_polka": last_week_polka[0] if last_week_polka else None,
-        "last_week_best_polka_player": last_week_polka[1] if last_week_polka else None,
         "last_week_combative": last_week_combative[1] if last_week_combative else None,
         "last_week_combative_player": last_week_combative[0] if last_week_combative else None,
     }

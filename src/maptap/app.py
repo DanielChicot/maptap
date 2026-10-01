@@ -16,7 +16,6 @@ from maptap.metrics import (
     green_jersey_win_counts,
     hero_stats,
     player_summary,
-    polka_jersey_win_counts,
 )
 
 _BASE = pathlib.Path(__file__).parent
@@ -63,13 +62,11 @@ def players(request: Request):
 
 @app.get("/days", response_class=HTMLResponse)
 def days(request: Request, sort: str = "cumulative"):
-    if sort not in ("cumulative", "green", "polka", "combative"):
+    if sort not in ("cumulative", "green", "combative"):
         sort = "cumulative"
     with closing(_conn()) as conn:
         if sort == "green":
             win_counts = green_jersey_win_counts(conn)
-        elif sort == "polka":
-            win_counts = polka_jersey_win_counts(conn)
         elif sort == "combative":
             win_counts = combative_win_counts(conn)
         else:

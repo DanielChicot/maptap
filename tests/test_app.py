@@ -136,18 +136,6 @@ def test_days_shows_green_jersey(tmp_path, monkeypatch):
     assert ">MapTap<" not in response.text  # MapTap gone from tables and toggle
 
 
-def test_players_page_shows_green_totals(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/players")
-    assert "Green Pts" in response.text
-    assert ">37<" in response.text  # Finn's total green points
-
 
 def test_every_page_renders_nav_and_hero(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
@@ -215,8 +203,9 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 7
-    assert 'data-sorted="desc"' in response.text  # Total Yellow carries the default order
+    assert response.text.count('data-sort="number"') == 10
+    assert 'data-sort="number" data-sorted="desc">Avg Yellow<' in response.text  # mean yellow carries the default order
+
 
 
 def test_days_page_has_day_cards(tmp_path, monkeypatch):
@@ -275,18 +264,6 @@ def test_index_shows_polka_column(tmp_path, monkeypatch):
     assert ">Polka<" in response.text
     assert ">16<" in response.text  # Finn's June 15 polka points
 
-
-def test_players_page_shows_polka_totals(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/players")
-    assert "Polka Pts" in response.text
-    assert ">36<" in response.text  # Finn's total polka points
 
 
 def test_root_redirects_to_days(tmp_path, monkeypatch):
@@ -362,19 +339,6 @@ def test_days_shows_combative_points_column(tmp_path, monkeypatch):
     assert ">4<" in response.text  # Finn's June 15 combative points
 
 
-def test_players_page_shows_combative_points(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/players")
-    assert ">Combative</th>" in response.text
-    assert ">5<" in response.text  # Finn's season combative points
-    assert "Total #100s" not in response.text
-
 
 @pytest.mark.parametrize("route", ["/league", "/players", "/days"])
 def test_tables_parse_with_a_real_thead(route, tmp_path, monkeypatch):
@@ -443,3 +407,50 @@ def test_hero_subtitle_counts_the_players(tmp_path, monkeypatch):
     response = TestClient(app).get("/days")
     assert "Three players, five rounds a day." in response.text
     assert "Three player," not in response.text  # plural agrees with the count
+
+
+def _players_table(markup):
+    """Header labels and per-player cell texts of the players table, in rendered order."""
+    table = markup.split("<table data-sortable>", 1)[1].split("</table>", 1)[0]
+    head, body = table.split("<tbody>", 1)
+    cells = lambda html, tag: [re.sub(r"<[^>]+>", "", c).strip() for c in re.findall(rf"<{tag}[^>]*>(.*?)</{tag}>", html, re.S)]
+    rows = [cells(r, "td") for r in re.findall(r"<tr>(.*?)</tr>", body, re.S)]
+    return cells(head, "th"), {row[0]: row[1:] for row in rows}, [row[0] for row in rows]
+
+
+def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    headers, _, order = _players_table(TestClient(app).get("/players").text)
+    assert headers == [
+        "Player",
+        "Best Yellow", "Best Green", "Best Polka", "Best Combative",
+        "Avg Yellow", "Avg Green", "Avg Polka", "Avg Combative",
+        "Days", "Wins",
+    ]
+    assert order == ["Daniel Chicot", "Finn Risdon", "Steve Risdon"]  # by mean yellow
+
+
+@pytest.mark.parametrize(
+    ("player", "expected"),
+    [
+        # Finn's best green and polka come from June 20, his best combative from June 15.
+        ("Finn Risdon", ["485", "20", "20", "4", "431.0", "18.5", "18.0", "2.5", "2", "2"]),
+        ("Daniel Chicot", ["478", "13", "14", "1", "478.0", "13.0", "14.0", "1.0", "1", "0"]),
+        ("Steve Risdon", ["413", "20", "20", "0", "413.0", "20.0", "20.0", "0.0", "1", "1"]),
+    ],
+)
+def test_players_page_row(player, expected, tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    _, rows, _ = _players_table(TestClient(app).get("/players").text)
+    assert rows[player] == expected
+

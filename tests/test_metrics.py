@@ -506,9 +506,26 @@ def test_player_summary_includes_green_points():
     assert summary["Daniel Chicot"]["green_points"] == 13
 
 
-def test_player_summary_ranked_by_total_cumulative():
-    players = [r["player"] for r in player_summary(_split_winner_conn())]
-    assert players == ["Cume Ace", "MapTap Ace"]
+def test_player_summary_ranked_by_average_cumulative():
+    # Finn leads on total (two days) but Dan's single 478 is the best mean.
+    players = [r["player"] for r in player_summary(_conn())]
+    assert players == ["Daniel Chicot", "Finn Risdon", "Steve Risdon"]
+
+
+@pytest.mark.parametrize(
+    ("player", "avg_cumulative", "avg_green", "avg_polka", "avg_combative"),
+    [
+        ("Finn Risdon", 431.0, 18.5, 18.0, 2.5),  # two days: (485 + 377) / 2, 37 / 2, 36 / 2, 5 / 2
+        ("Daniel Chicot", 478.0, 13.0, 14.0, 1.0),
+        ("Steve Risdon", 413.0, 20.0, 20.0, 0.0),
+    ],
+)
+def test_player_summary_averages_per_day_played(player, avg_cumulative, avg_green, avg_polka, avg_combative):
+    summary = {r["player"]: r for r in player_summary(_conn())}[player]
+    assert summary["avg_cumulative"] == pytest.approx(avg_cumulative)
+    assert summary["avg_green"] == pytest.approx(avg_green)
+    assert summary["avg_polka"] == pytest.approx(avg_polka)
+    assert summary["avg_combative"] == pytest.approx(avg_combative)
 
 
 def test_daily_leaderboard_green_sort_ranks_by_green_points():
@@ -764,3 +781,19 @@ def test_daily_leaderboard_standings_carry_rounds_in_order(game_date, player, ex
 def test_hero_stats_counts_distinct_players():
     stats = hero_stats(_conn())
     assert stats["player_count"] == 3  # Dan, Finn and Steve in SAMPLE_EXPORT
+
+
+@pytest.mark.parametrize(
+    ("player", "best_green", "best_polka", "best_combative"),
+    [
+        ("Finn Risdon", 20, 20, 4),  # green and polka from June 20, combative from June 15
+        ("Daniel Chicot", 13, 14, 1),
+        ("Steve Risdon", 20, 20, 0),
+    ],
+)
+def test_player_summary_best_single_day_per_category(player, best_green, best_polka, best_combative):
+    summary = {r["player"]: r for r in player_summary(_conn())}[player]
+    assert (summary["best_green"], summary["best_polka"], summary["best_combative"]) == (
+        best_green, best_polka, best_combative,
+    )
+

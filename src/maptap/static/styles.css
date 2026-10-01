@@ -147,6 +147,7 @@ th[data-sort]:hover { color: var(--ink); }
 .arr { font-size: 0.85em; color: var(--accent); margin-left: 2px; }
 th.rounds-group { text-align: center; }
 th.round, td.round { width: 2.6em; padding-left: 6px; padding-right: 6px; }
+.players-card th, .players-card td { padding-left: 12px; padding-right: 12px; }
 tr.hidden { display: none; }
 
 .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 12px; margin-top: 16px; }

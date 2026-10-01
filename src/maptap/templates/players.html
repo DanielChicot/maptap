@@ -2,18 +2,21 @@
 {% block title %}Players · Map Tappers{% endblock %}
 {% block content %}
 <h2 class="section-head">Players</h2>
-<p class="section-sub">Ranked by total yellow jersey (cumulative) across every day played.</p>
+<p class="section-sub">Ranked by average yellow jersey (cumulative) per day played.</p>
 
-<div class="panel table-card">
+<div class="panel table-card players-card">
     <table data-sortable>
         <thead>
             <tr>
                 <th class="txt" data-sort="text">Player</th>
                 <th class="num" data-sort="number">Best Yellow</th>
-                <th class="num" data-sort="number" data-sorted="desc">Total Yellow</th>
-                <th class="num" data-sort="number">Green Pts</th>
-                <th class="num" data-sort="number">Polka Pts</th>
-                <th class="num" data-sort="number">Combative</th>
+                <th class="num" data-sort="number">Best Green</th>
+                <th class="num" data-sort="number">Best Polka</th>
+                <th class="num" data-sort="number">Best Combative</th>
+                <th class="num" data-sort="number" data-sorted="desc">Avg Yellow</th>
+                <th class="num" data-sort="number">Avg Green</th>
+                <th class="num" data-sort="number">Avg Polka</th>
+                <th class="num" data-sort="number">Avg Combative</th>
                 <th class="num" data-sort="number">Days</th>
                 <th class="num" data-sort="number">Wins</th>
             </tr>
@@ -23,10 +26,13 @@
             <tr>
                 <td class="txt">{{ p.player }}</td>
                 <td class="num">{{ p.best_cumulative }}</td>
-                <td class="num">{{ p.total_cumulative }}</td>
-                <td class="num">{{ p.green_points }}</td>
-                <td class="num">{{ p.polka_points }}</td>
-                <td class="num">{{ p.combative_points }}</td>
+                <td class="num">{{ p.best_green }}</td>
+                <td class="num">{{ p.best_polka }}</td>
+                <td class="num">{{ p.best_combative }}</td>
+                <td class="num">{{ "%.1f"|format(p.avg_cumulative) }}</td>
+                <td class="num">{{ "%.1f"|format(p.avg_green) }}</td>
+                <td class="num">{{ "%.1f"|format(p.avg_polka) }}</td>
+                <td class="num">{{ "%.1f"|format(p.avg_combative) }}</td>
                 <td class="num">{{ p.days_played }}</td>
                 <td class="num">{{ p.wins }}</td>
             </tr>

@@ -36,6 +36,14 @@ def all_entries(conn: sqlite3.Connection) -> list[dict]:
     return result
 
 
+def _best_day_by_player(by_day: dict[str, dict[str, float]]) -> dict[str, float]:
+    best: dict[str, float] = {}
+    for points_by_player in by_day.values():
+        for player, points in points_by_player.items():
+            best[player] = max(best.get(player, points), points)
+    return best
+
+
 def player_summary(conn: sqlite3.Connection) -> list[dict]:
     base = conn.execute(
         """
@@ -51,7 +59,7 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             FROM rounds GROUP BY entry_id
         ) r_sum ON r_sum.entry_id = e.id
         GROUP BY e.player
-        ORDER BY total_cumulative DESC
+        ORDER BY SUM(r_sum.cumulative) * 1.0 / COUNT(*) DESC, e.player ASC
         """
     ).fetchall()
 
@@ -59,6 +67,9 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
     green = green_jersey_totals(conn)
     polka = polka_jersey_totals(conn)
     combative = combative_points_totals(conn)
+    best_green = _best_day_by_player(green_points_by_day(conn))
+    best_polka = _best_day_by_player(polka_points_by_day(conn))
+    best_combative = _best_day_by_player(combative_points_by_day(conn))
     return [
         {
             "player": row["player"],
@@ -71,6 +82,13 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "green_points": green.get(row["player"], 0),
             "polka_points": polka.get(row["player"], 0),
             "combative_points": combative.get(row["player"], 0),
+            "best_green": best_green.get(row["player"], 0),
+            "best_polka": best_polka.get(row["player"], 0),
+            "best_combative": best_combative.get(row["player"], 0),
+            "avg_cumulative": row["total_cumulative"] / row["days_played"],
+            "avg_green": green.get(row["player"], 0) / row["days_played"],
+            "avg_polka": polka.get(row["player"], 0) / row["days_played"],
+            "avg_combative": combative.get(row["player"], 0) / row["days_played"],
         }
         for row in base
     ]

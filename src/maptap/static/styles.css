@@ -152,6 +152,7 @@ tr.hidden { display: none; }
 
 .day-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 12px; margin-top: 16px; }
 .day-grid th, .day-grid td { padding-left: 8px; padding-right: 8px; }
+.day-grid th.jersey { width: 20%; }
 tr[aria-expanded] { cursor: pointer; }
 tr[aria-expanded]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .caret { display: inline-block; width: 1.1em; color: var(--ink-faint); transition: transform 0.15s, color 0.15s; }

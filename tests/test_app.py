@@ -208,6 +208,27 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
 
 
 
+@pytest.mark.parametrize(
+    ("sort", "default_column"),
+    [("cumulative", "Yellow"), ("green", "Green"), ("combative", "Combative")],
+)
+def test_day_tables_are_sortable(sort, default_column, tmp_path, monkeypatch):
+    db = tmp_path / "maptap.db"
+    _build_db(db)
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    client = TestClient(app)
+    response = client.get(f"/days?sort={sort}")
+    days = response.text.count("<caption>")
+    assert response.text.count("<table data-sortable>") == days
+    assert "/static/sort.js" in response.text
+    assert response.text.count('data-sort="text"') == days
+    assert response.text.count('data-sort="number"') == 4 * days
+    assert response.text.count(f'data-sorted="desc">{default_column}<') == days  # the page's ranking carries the default order
+
+
 def test_days_page_has_day_cards(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)

@@ -22,10 +22,16 @@
 <div class="day-grid">
     {% for day in days %}
     <div class="panel table-card">
-        <table>
+        <table data-sortable>
             <caption>{{ day.game_date }}</caption>
             <thead>
-                <tr><th class="num">#</th><th class="txt">Player</th><th class="num">Yellow</th><th class="num">Green</th><th class="num">Combative</th></tr>
+                <tr>
+                    <th class="num" data-sort="number" data-first="asc">#</th>
+                    <th class="txt" data-sort="text">Player</th>
+                    {% for key, label in [('cumulative', 'Yellow'), ('green', 'Green'), ('combative', 'Combative')] %}
+                    <th class="num jersey" data-sort="number"{% if sort == key %} data-sorted="desc"{% endif %}>{{ label }}</th>
+                    {% endfor %}
+                </tr>
             </thead>
             <tbody>
                 {% for s in day.standings %}
@@ -47,5 +53,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
+<script src="/static/sort.js"></script>
 <script src="/static/expand.js"></script>
 {% endblock %}

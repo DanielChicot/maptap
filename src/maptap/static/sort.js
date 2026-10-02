@@ -23,7 +23,7 @@
     headers.forEach((th) => {
       const colIndex = Array.from(th.parentNode.children).indexOf(th);
       const sortType = th.dataset.sort;
-      let descending = sortType === "number";
+      let descending = th.dataset.first ? th.dataset.first === "desc" : sortType === "number";
 
       const initial = th.dataset.sorted;
       if (initial) {
@@ -33,16 +33,24 @@
       }
 
       th.addEventListener("click", () => {
-        const rows = Array.from(tbody.rows);
-        rows.sort((a, b) => {
-          const av = a.cells[colIndex].textContent;
-          const bv = b.cells[colIndex].textContent;
+        // A rounds-row belongs to the row above it, so the pair moves as one.
+        const groups = [];
+        Array.from(tbody.rows).forEach((row) => {
+          if (row.classList.contains("rounds-row") && groups.length) {
+            groups[groups.length - 1].push(row);
+          } else {
+            groups.push([row]);
+          }
+        });
+        groups.sort(([a], [b]) => {
+          const av = a.cells[colIndex].textContent.trim();
+          const bv = b.cells[colIndex].textContent.trim();
           if (sortType === "number") {
             return descending ? Number(bv) - Number(av) : Number(av) - Number(bv);
           }
           return descending ? bv.localeCompare(av) : av.localeCompare(bv);
         });
-        rows.forEach((row) => tbody.appendChild(row));
+        groups.flat().forEach((row) => tbody.appendChild(row));
         markActive(th, descending);
         descending = !descending;
       });

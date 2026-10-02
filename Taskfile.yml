@@ -5,6 +5,8 @@ vars:
   PATTERN: 'Map Tappers'
   WORKDIR: /tmp/maptap-pull
   DB: maptap.db
+  BRANCH:
+    sh: b=$(git branch --show-current); echo "${b:-a detached HEAD}"
 
 tasks:
   default:
@@ -26,11 +28,15 @@ tasks:
 
   import:
     desc: Import the extracted chat into the SQLite database
+    preconditions: &on-main
+      - sh: '[ "$(git branch --show-current)" = main ]'
+        msg: "Scores are published from main, but {{.BRANCH}} is checked out. Run 'git switch main' and try again."
     cmds:
       - uv run python -m maptap.importer {{.WORKDIR}}/*.txt --db {{.DB}}
 
   publish:
     desc: Commit and push the updated database (triggers Render redeploy)
+    preconditions: *on-main
     cmds:
       - |
         git add {{.DB}}
@@ -38,11 +44,12 @@ tasks:
           echo "No database changes to publish."
         else
           git commit -m "scores via daily import"
-          git push
+          git push origin main
         fi
 
   update:
     desc: Pull newest export, import it, and publish in one go
+    preconditions: *on-main
     cmds:
       - task: fetch
       - task: import

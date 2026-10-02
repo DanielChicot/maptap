@@ -344,8 +344,8 @@ def _best_yellow_between(
 
 
 def _best_points_between(
-    by_day: dict[str, dict[str, int]], start: datetime.date, end: datetime.date
-) -> tuple[int, str] | None:
+    by_day: dict[str, dict[str, int | float]], start: datetime.date, end: datetime.date
+) -> tuple[int | float, str] | None:
     candidates = [
         (points, player)
         for day, players in by_day.items()
@@ -385,14 +385,7 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
     week_best = _best_yellow_between(conn, week_start, week_start + datetime.timedelta(days=7))
     last_week_best = _best_yellow_between(conn, last_week_start, week_start)
     last_week_green = _best_points_between(green_points_by_day(conn), last_week_start, week_start)
-    last_week_awards: dict[str, int] = {}
-    for day, winners in combative_riders_by_day(conn).items():
-        if last_week_start.isoformat() <= day < week_start.isoformat():
-            for player in winners:
-                last_week_awards[player] = last_week_awards.get(player, 0) + 1
-    last_week_combative = (
-        min(last_week_awards.items(), key=lambda pw: (-pw[1], pw[0])) if last_week_awards else None
-    )
+    last_week_combative = _best_points_between(combative_points_by_day(conn), last_week_start, week_start)
 
     return {
         "player_count": player_count(conn),
@@ -408,6 +401,6 @@ def hero_stats(conn: sqlite3.Connection, today: datetime.date | None = None) -> 
         "last_week_best_player": last_week_best["player"] if last_week_best else None,
         "last_week_best_green": last_week_green[0] if last_week_green else None,
         "last_week_best_green_player": last_week_green[1] if last_week_green else None,
-        "last_week_combative": last_week_combative[1] if last_week_combative else None,
-        "last_week_combative_player": last_week_combative[0] if last_week_combative else None,
+        "last_week_combative": last_week_combative[0] if last_week_combative else None,
+        "last_week_combative_player": last_week_combative[1] if last_week_combative else None,
     }

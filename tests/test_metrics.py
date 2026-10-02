@@ -600,18 +600,30 @@ def test_daily_leaderboard_combative_sort_ranks_by_rounds():
 
 
 @pytest.mark.parametrize(
-    ("today", "wins", "player"),
+    ("today", "points", "player"),
     [
-        # Sunday after the week holding all entries: Finn took 2 of the 3 awards.
-        (datetime.date(2026, 6, 21), 2, "Finn Risdon"),
+        # Sunday after the week holding all entries: best single day is Finn's
+        # four 100s on June 15, not his count of daily awards.
+        (datetime.date(2026, 6, 21), 4, "Finn Risdon"),
         # Friday inside the entries' week: the prior week is empty.
         (datetime.date(2026, 6, 19), None, None),
     ],
 )
-def test_hero_stats_last_week_combative(today, wins, player):
+def test_hero_stats_last_week_combative(today, points, player):
     stats = hero_stats(_conn(), today=today)
-    assert stats["last_week_combative"] == wins
+    assert stats["last_week_combative"] == points
     assert stats["last_week_combative_player"] == player
+
+
+def test_hero_stats_last_week_combative_counts_the_tie_break_half_point():
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Alice", 900, [100, 100, 95, 60, 50]),
+        _entry_with_rounds("Bob", 880, [100, 100, 90, 80, 70]),
+    ])
+    stats = hero_stats(conn, today=datetime.date(2026, 6, 21))
+    assert stats["last_week_combative"] == 2.5
+    assert stats["last_week_combative_player"] == "Alice"
 
 
 def test_hero_stats_empty_database():

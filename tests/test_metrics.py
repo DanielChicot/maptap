@@ -249,7 +249,33 @@ def test_daily_win_counts_exact_tie_credits_both_players():
 )
 def test_player_summary_wins_use_cumulative_metric(player, expected_wins):
     summary = {r["player"]: r for r in player_summary(_split_winner_conn())}
-    assert summary[player]["wins"] == expected_wins
+    assert summary[player]["cumulative_wins"] == expected_wins
+
+
+def _split_jersey_conn():
+    """One day where yellow, green and combative each go to a different player."""
+    conn = connect()
+    upsert_entries(conn, [
+        _entry_with_rounds("Yellow Ace", 900, [90, 90, 90, 90, 90]),  # 450 cumulative, 8 green, no 100s
+        _entry_with_rounds("Green Ace", 850, [99, 99, 95, 95, 0]),  # 388 cumulative, 12 green
+        _entry_with_rounds("Combative Ace", 800, [100, 100, 50, 50, 50]),  # 350 cumulative, 10 green, two 100s
+    ])
+    return conn
+
+
+@pytest.mark.parametrize(
+    ("player", "cumulative_wins", "green_wins", "combative_wins"),
+    [
+        ("Yellow Ace", 1, 0, 0),
+        ("Green Ace", 0, 1, 0),
+        ("Combative Ace", 0, 0, 1),
+    ],
+)
+def test_player_summary_wins_per_competition(player, cumulative_wins, green_wins, combative_wins):
+    summary = {r["player"]: r for r in player_summary(_split_jersey_conn())}[player]
+    assert (summary["cumulative_wins"], summary["green_wins"], summary["combative_wins"]) == (
+        cumulative_wins, green_wins, combative_wins,
+    )
 
 
 def _entry_with_rounds(player, maptap_score, scores, game_date=datetime.date(2026, 6, 15)):
@@ -482,9 +508,9 @@ def test_wins_exact_tie_credits_both_players():
         _make_entry("Carol", 800, round_score=90),
     ])
     summary = {r["player"]: r for r in player_summary(conn)}
-    assert summary["Alice"]["wins"] == 1
-    assert summary["Bob"]["wins"] == 1
-    assert summary["Carol"]["wins"] == 0
+    assert summary["Alice"]["cumulative_wins"] == 1
+    assert summary["Bob"]["cumulative_wins"] == 1
+    assert summary["Carol"]["cumulative_wins"] == 0
 
 
 def test_wins_cumulative_tie_goes_to_higher_maptap():
@@ -494,8 +520,8 @@ def test_wins_cumulative_tie_goes_to_higher_maptap():
         _make_entry("Bob", 880, round_score=100),
     ])
     summary = {r["player"]: r for r in player_summary(conn)}
-    assert summary["Alice"]["wins"] == 1
-    assert summary["Bob"]["wins"] == 0
+    assert summary["Alice"]["cumulative_wins"] == 1
+    assert summary["Bob"]["cumulative_wins"] == 0
 
 
 def test_hero_stats_over_sample_export():

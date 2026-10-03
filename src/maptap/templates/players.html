@@ -16,7 +16,9 @@
                 <th class="num" data-sort="number">Avg Green</th>
                 <th class="num" data-sort="number">Avg Combative</th>
                 <th class="num" data-sort="number">Days</th>
-                <th class="num" data-sort="number">Wins</th>
+                <th class="num" data-sort="number">Yellow Wins</th>
+                <th class="num" data-sort="number">Green Wins</th>
+                <th class="num" data-sort="number">Combative Wins</th>
             </tr>
         </thead>
         <tbody>
@@ -30,7 +32,9 @@
                 <td class="num">{{ "%.1f"|format(p.avg_green) }}</td>
                 <td class="num">{{ "%.1f"|format(p.avg_combative) }}</td>
                 <td class="num">{{ p.days_played }}</td>
-                <td class="num">{{ p.wins }}</td>
+                <td class="num">{{ p.cumulative_wins }}</td>
+                <td class="num">{{ p.green_wins }}</td>
+                <td class="num">{{ p.combative_wins }}</td>
             </tr>
             {% endfor %}
         </tbody>

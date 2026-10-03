@@ -212,7 +212,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
     assert "data-sortable" in response.text
     assert "/static/sort.js" in response.text
     assert 'data-sort="text"' in response.text
-    assert response.text.count('data-sort="number"') == 8
+    assert response.text.count('data-sort="number"') == 10
     assert 'data-sort="number" data-sorted="desc">Avg Yellow<' in response.text  # mean yellow carries the default order
 
 
@@ -385,7 +385,7 @@ def _players_table(markup):
     return cells(head, "th"), {row[0]: row[1:] for row in rows}, [row[0] for row in rows]
 
 
-def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeypatch):
+def test_players_page_columns_are_bests_averages_days_and_wins_per_competition(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -397,7 +397,7 @@ def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeyp
         "Player",
         "Best Yellow", "Best Green", "Best Combative",
         "Avg Yellow", "Avg Green", "Avg Combative",
-        "Days", "Wins",
+        "Days", "Yellow Wins", "Green Wins", "Combative Wins",
     ]
     assert order == ["Daniel Chicot", "Finn Risdon", "Steve Risdon"]  # by mean yellow
 
@@ -406,9 +406,9 @@ def test_players_page_columns_are_bests_averages_days_and_wins(tmp_path, monkeyp
     ("player", "expected"),
     [
         # Finn's best green comes from June 20, his best combative from June 15.
-        ("Finn Risdon", ["485", "20", "4", "431.0", "18.5", "2.5", "2", "2"]),
-        ("Daniel Chicot", ["478", "13", "1", "478.0", "13.0", "1.0", "1", "0"]),
-        ("Steve Risdon", ["413", "20", "0", "413.0", "20.0", "0.0", "1", "1"]),
+        ("Finn Risdon", ["485", "20", "4", "431.0", "18.5", "2.5", "2", "2", "2", "2"]),
+        ("Daniel Chicot", ["478", "13", "1", "478.0", "13.0", "1.0", "1", "0", "0", "0"]),
+        ("Steve Risdon", ["413", "20", "0", "413.0", "20.0", "0.0", "1", "1", "1", "1"]),
     ],
 )
 def test_players_page_row(player, expected, tmp_path, monkeypatch):

@@ -61,7 +61,9 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
         """
     ).fetchall()
 
-    wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
+    cumulative_wins = {row["player"]: row["wins"] for row in daily_win_counts(conn, metric="cumulative")}
+    green_wins = {row["player"]: row["wins"] for row in green_jersey_win_counts(conn)}
+    combative_wins = {row["player"]: row["wins"] for row in combative_win_counts(conn)}
     green = green_jersey_totals(conn)
     combative = combative_points_totals(conn)
     best_green = _best_day_by_player(green_points_by_day(conn))
@@ -74,7 +76,9 @@ def player_summary(conn: sqlite3.Connection) -> list[dict]:
             "total_maptap": row["total_maptap"],
             "total_cumulative": row["total_cumulative"],
             "days_played": row["days_played"],
-            "wins": wins.get(row["player"], 0),
+            "cumulative_wins": cumulative_wins.get(row["player"], 0),
+            "green_wins": green_wins.get(row["player"], 0),
+            "combative_wins": combative_wins.get(row["player"], 0),
             "green_points": green.get(row["player"], 0),
             "combative_points": combative.get(row["player"], 0),
             "best_green": best_green.get(row["player"], 0),

@@ -69,7 +69,7 @@ def test_players_and_days_routes(tmp_path, monkeypatch):
     assert "Finn Risdon" in days_response.text
 
 
-def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
+def test_days_shows_cumulative_without_rank_toggle(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -81,44 +81,53 @@ def test_days_shows_cumulative_and_sort_toggle(tmp_path, monkeypatch):
     assert response.status_code == 200
     assert ">485<" in response.text  # Finn's June 15 cumulative
     assert ">478<" in response.text  # Dan's June 15 cumulative
-    assert 'href="/days?sort=green"' in response.text
-    assert 'href="/days"' in response.text
-    assert 'href="/days?sort=maptap"' not in response.text
-    assert 'href="/days?sort=polka"' not in response.text
-    assert 'href="/days?sort=combative"' in response.text
+    assert "Rank by" not in response.text
+    assert "/days?sort=" not in response.text
 
 
-def test_days_sort_by_green(tmp_path, monkeypatch):
+_WIN_ROW_LABELS = ["Daily wins (Yellow)", "Daily wins (Green)", "Daily wins (Combative)"]
+
+
+def _win_row(markup, label):
+    """The markup between a win-row label and the next label (or the end of the win table)."""
+    row = markup.split(label, 1)[1]
+    following = [other for other in _WIN_ROW_LABELS if other in row]
+    return row.split(following[0], 1)[0] if following else row.split('class="day-grid"', 1)[0]
+
+
+def test_days_shows_a_win_row_per_competition_in_order(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
 
     from maptap.app import app
 
-    client = TestClient(app)
-    response = client.get("/days?sort=green")
-    assert response.status_code == 200
-    assert "Finn Risdon" in response.text
+    markup = TestClient(app).get("/days").text
+    positions = [markup.index(label) for label in _WIN_ROW_LABELS]
+    assert positions == sorted(positions)
 
 
-def test_days_shows_daily_win_counts(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("label", "chip"),
+    [
+        ("Daily wins (Yellow)", "Finn Risdon · 2"),
+        ("Daily wins (Yellow)", "Steve Risdon · 1"),
+        ("Daily wins (Yellow)", "Daniel Chicot · 0"),
+        ("Daily wins (Green)", "Finn Risdon · 2"),
+        ("Daily wins (Green)", "Steve Risdon · 1"),
+        ("Daily wins (Combative)", "Finn Risdon · 2"),
+        ("Daily wins (Combative)", "Steve Risdon · 1"),
+    ],
+)
+def test_days_win_rows_show_counts(label, chip, tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
 
     from maptap.app import app
 
-    client = TestClient(app)
-    cumulative_response = client.get("/days")
-    assert "Daily wins (Yellow)" in cumulative_response.text
-    assert "Finn Risdon · 2" in cumulative_response.text
-    assert "Steve Risdon · 1" in cumulative_response.text
-    assert "Daniel Chicot · 0" in cumulative_response.text
-
-    green_response = client.get("/days?sort=green")
-    assert "Daily wins (Green)" in green_response.text
-    assert "Finn Risdon · 2" in green_response.text
-    assert "Steve Risdon · 1" in green_response.text
+    markup = TestClient(app).get("/days").text
+    assert chip in _win_row(markup, label)
 
 
 def test_days_shows_green_jersey(tmp_path, monkeypatch):
@@ -208,11 +217,7 @@ def test_players_table_is_sortable(tmp_path, monkeypatch):
 
 
 
-@pytest.mark.parametrize(
-    ("sort", "default_column"),
-    [("cumulative", "Yellow"), ("green", "Green"), ("combative", "Combative")],
-)
-def test_day_tables_are_sortable(sort, default_column, tmp_path, monkeypatch):
+def test_day_tables_are_sortable(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -220,13 +225,13 @@ def test_day_tables_are_sortable(sort, default_column, tmp_path, monkeypatch):
     from maptap.app import app
 
     client = TestClient(app)
-    response = client.get(f"/days?sort={sort}")
+    response = client.get("/days")
     days = response.text.count("<caption>")
     assert response.text.count("<table data-sortable>") == days
     assert "/static/sort.js" in response.text
     assert response.text.count('data-sort="text"') == days
     assert response.text.count('data-sort="number"') == 4 * days
-    assert response.text.count(f'data-sorted="desc">{default_column}<') == days  # the page's ranking carries the default order
+    assert response.text.count('data-sorted="desc">Yellow<') == days  # yellow ranking carries the default order
 
 
 def test_days_page_has_day_cards(tmp_path, monkeypatch):
@@ -272,32 +277,18 @@ def test_nav_lists_days_first(tmp_path, monkeypatch):
     assert response.text.index(">League</a>") < response.text.index(">Players</a>")
 
 
-def test_days_unknown_sort_falls_back_to_cumulative(tmp_path, monkeypatch):
+@pytest.mark.parametrize("sort", ["green", "combative", "polka", "bogus"])
+def test_old_sort_links_rank_by_yellow(sort, tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
 
     from maptap.app import app
 
-    client = TestClient(app)
-    response = client.get("/days?sort=bogus")
+    response = TestClient(app).get(f"/days?sort={sort}")
     assert response.status_code == 200
-    assert "Daily wins (Yellow)" in response.text
-
-
-def test_days_sort_by_combative(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    client = TestClient(app)
-    response = client.get("/days?sort=combative")
-    assert response.status_code == 200
-    assert "Daily wins (Combative)" in response.text
-    assert "Finn Risdon · 2" in response.text
-    assert "Steve Risdon · 1" in response.text
+    days = response.text.count("<caption>")
+    assert response.text.count('data-sorted="desc">Yellow<') == days
 
 
 def test_days_shows_combative_points_column(tmp_path, monkeypatch):
@@ -312,7 +303,6 @@ def test_days_shows_combative_points_column(tmp_path, monkeypatch):
     assert response.text.count(">Combative</th>") == 3  # one per sample day card
     assert ">100s<" not in response.text
     assert "✓" not in response.text
-    assert 'href="/days?sort=combative"' in response.text
     assert ">4<" in response.text  # Finn's June 15 combative points
 
 
@@ -432,7 +422,7 @@ def test_players_page_row(player, expected, tmp_path, monkeypatch):
     assert rows[player] == expected
 
 
-@pytest.mark.parametrize("route", ["/days", "/days?sort=green", "/days?sort=combative", "/league", "/players"])
+@pytest.mark.parametrize("route", ["/days", "/league", "/players"])
 def test_no_page_mentions_polka(route, tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
@@ -441,17 +431,3 @@ def test_no_page_mentions_polka(route, tmp_path, monkeypatch):
     from maptap.app import app
 
     assert "polka" not in TestClient(app).get(route).text.lower()
-
-
-def test_old_polka_sort_link_falls_back_to_yellow(tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    response = TestClient(app).get("/days?sort=polka")
-    assert response.status_code == 200
-    assert 'class="chip active" href="/days">Yellow<' in response.text
-    assert "Daily wins (Yellow)" in response.text
-

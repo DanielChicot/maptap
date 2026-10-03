@@ -4,19 +4,15 @@
 <h2 class="section-head">By day</h2>
 <p class="section-sub">Daily standings, newest first.</p>
 
-<div class="panel toolbar">
+<div class="panel toolbar win-rows">
+    {% for label, win_counts in win_rows %}
+    <span class="chip-label">Daily wins ({{ label }})</span>
     <div class="chips">
-        <span class="chip-label">Rank by</span>
-        <a class="chip {% if sort == 'cumulative' %}active{% endif %}" href="/days">Yellow</a>
-        <a class="chip {% if sort == 'green' %}active{% endif %}" href="/days?sort=green">Green</a>
-        <a class="chip {% if sort == 'combative' %}active{% endif %}" href="/days?sort=combative">Combative</a>
-    </div>
-    <div class="chips">
-        <span class="chip-label">Daily wins ({{ {'green': 'Green', 'combative': 'Combative'}.get(sort, 'Yellow') }})</span>
         {% for w in win_counts %}
         <span class="chip static">{{ w.player }} · {{ w.wins }}</span>
         {% endfor %}
     </div>
+    {% endfor %}
 </div>
 
 <div class="day-grid">
@@ -29,7 +25,7 @@
                     <th class="num" data-sort="number" data-first="asc">#</th>
                     <th class="txt" data-sort="text">Player</th>
                     {% for key, label in [('cumulative', 'Yellow'), ('green', 'Green'), ('combative', 'Combative')] %}
-                    <th class="num jersey" data-sort="number"{% if sort == key %} data-sorted="desc"{% endif %}>{{ label }}</th>
+                    <th class="num jersey" data-sort="number"{% if key == 'cumulative' %} data-sorted="desc"{% endif %}>{{ label }}</th>
                     {% endfor %}
                 </tr>
             </thead>

@@ -85,49 +85,61 @@ def test_days_shows_cumulative_without_rank_toggle(tmp_path, monkeypatch):
     assert "/days?sort=" not in response.text
 
 
-_WIN_ROW_LABELS = ["Daily wins (Yellow)", "Daily wins (Green)", "Daily wins (Combative)"]
+def _win_row(markup, competition):
+    """The markup of one competition's win-count row on the days page."""
+    return markup.split(f'id="wins-{competition}"', 1)[1].split("</div>", 1)[0]
 
 
-def _win_row(markup, label):
-    """The markup between a win-row label and the next label (or the end of the win table)."""
-    row = markup.split(label, 1)[1]
-    following = [other for other in _WIN_ROW_LABELS if other in row]
-    return row.split(following[0], 1)[0] if following else row.split('class="day-grid"', 1)[0]
-
-
-def test_days_shows_a_win_row_per_competition_in_order(tmp_path, monkeypatch):
+def _days_markup(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
 
     from maptap.app import app
 
-    markup = TestClient(app).get("/days").text
-    positions = [markup.index(label) for label in _WIN_ROW_LABELS]
-    assert positions == sorted(positions)
+    return TestClient(app).get("/days").text
+
+
+def test_days_win_switcher_has_a_button_per_competition_with_yellow_selected(tmp_path, monkeypatch):
+    buttons = [
+        (attrs["aria-controls"], attrs["aria-pressed"])
+        for tag, attrs in map(lambda t: (t[0], dict(t[1])), _start_tags(_days_markup(tmp_path, monkeypatch)))
+        if tag == "button" and "aria-controls" in attrs
+    ]
+    assert buttons == [("wins-yellow", "true"), ("wins-green", "false"), ("wins-combative", "false")]
 
 
 @pytest.mark.parametrize(
-    ("label", "chip"),
+    ("competition", "hidden"),
+    [("yellow", False), ("green", True), ("combative", True)],
+)
+def test_days_shows_only_the_yellow_win_row_initially(competition, hidden, tmp_path, monkeypatch):
+    rows = {
+        attrs["id"]: attrs
+        for tag, attrs in map(lambda t: (t[0], dict(t[1])), _start_tags(_days_markup(tmp_path, monkeypatch)))
+        if tag == "div" and attrs.get("id", "").startswith("wins-")
+    }
+    assert ("hidden" in rows[f"wins-{competition}"]) is hidden
+
+
+def test_days_loads_win_switcher_script(tmp_path, monkeypatch):
+    assert "/static/wins.js" in _days_markup(tmp_path, monkeypatch)
+
+
+@pytest.mark.parametrize(
+    ("competition", "chip"),
     [
-        ("Daily wins (Yellow)", "Finn Risdon · 2"),
-        ("Daily wins (Yellow)", "Steve Risdon · 1"),
-        ("Daily wins (Yellow)", "Daniel Chicot · 0"),
-        ("Daily wins (Green)", "Finn Risdon · 2"),
-        ("Daily wins (Green)", "Steve Risdon · 1"),
-        ("Daily wins (Combative)", "Finn Risdon · 2"),
-        ("Daily wins (Combative)", "Steve Risdon · 1"),
+        ("yellow", "Finn Risdon · 2"),
+        ("yellow", "Steve Risdon · 1"),
+        ("yellow", "Daniel Chicot · 0"),
+        ("green", "Finn Risdon · 2"),
+        ("green", "Steve Risdon · 1"),
+        ("combative", "Finn Risdon · 2"),
+        ("combative", "Steve Risdon · 1"),
     ],
 )
-def test_days_win_rows_show_counts(label, chip, tmp_path, monkeypatch):
-    db = tmp_path / "maptap.db"
-    _build_db(db)
-    monkeypatch.setenv("MAPTAP_DB", str(db))
-
-    from maptap.app import app
-
-    markup = TestClient(app).get("/days").text
-    assert chip in _win_row(markup, label)
+def test_days_win_rows_show_counts(competition, chip, tmp_path, monkeypatch):
+    assert chip in _win_row(_days_markup(tmp_path, monkeypatch), competition)
 
 
 def test_days_shows_green_jersey(tmp_path, monkeypatch):

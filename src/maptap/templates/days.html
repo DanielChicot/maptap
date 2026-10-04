@@ -4,10 +4,15 @@
 <h2 class="section-head">By day</h2>
 <p class="section-sub">Daily standings, newest first.</p>
 
-<div class="panel toolbar win-rows">
+<div class="panel toolbar">
+    <span class="chip-label">Daily wins</span>
+    <div class="seg" role="group" aria-label="Competition">
+        {% for label, _ in win_rows %}
+        <button type="button" class="seg-btn" aria-controls="wins-{{ label | lower }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>
+        {% endfor %}
+    </div>
     {% for label, win_counts in win_rows %}
-    <span class="chip-label">Daily wins ({{ label }})</span>
-    <div class="chips">
+    <div class="chips" id="wins-{{ label | lower }}"{% if not loop.first %} hidden{% endif %}>
         {% for w in win_counts %}
         <span class="chip static">{{ w.player }} · {{ w.wins }}</span>
         {% endfor %}
@@ -51,4 +56,5 @@
 {% block scripts %}
 <script src="/static/sort.js"></script>
 <script src="/static/expand.js"></script>
+<script src="/static/wins.js"></script>
 {% endblock %}

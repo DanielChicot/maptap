@@ -397,7 +397,7 @@ def _players_table(markup):
     return cells(head, "th"), {row[0]: row[1:] for row in rows}, [row[0] for row in rows]
 
 
-def test_players_page_columns_are_bests_averages_days_and_wins_per_competition(tmp_path, monkeypatch):
+def test_players_page_columns_are_bests_averages_wins_and_days(tmp_path, monkeypatch):
     db = tmp_path / "maptap.db"
     _build_db(db)
     monkeypatch.setenv("MAPTAP_DB", str(db))
@@ -409,7 +409,7 @@ def test_players_page_columns_are_bests_averages_days_and_wins_per_competition(t
         "Player",
         "Best Yellow", "Best Green", "Best Combative",
         "Avg Yellow", "Avg Green", "Avg Combative",
-        "Days", "Yellow Wins", "Green Wins", "Combative Wins",
+        "Yellow Wins", "Green Wins", "Combative Wins", "Days",
     ]
     assert order == ["Daniel Chicot", "Finn Risdon", "Steve Risdon"]  # by mean yellow
 
@@ -419,7 +419,7 @@ def test_players_page_columns_are_bests_averages_days_and_wins_per_competition(t
     [
         # Finn's best green comes from June 20, his best combative from June 15.
         ("Finn Risdon", ["485", "20", "4", "431.0", "18.5", "2.5", "2", "2", "2", "2"]),
-        ("Daniel Chicot", ["478", "13", "1", "478.0", "13.0", "1.0", "1", "0", "0", "0"]),
+        ("Daniel Chicot", ["478", "13", "1", "478.0", "13.0", "1.0", "0", "0", "0", "1"]),
         ("Steve Risdon", ["413", "20", "0", "413.0", "20.0", "0.0", "1", "1", "1", "1"]),
     ],
 )

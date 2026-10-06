@@ -1,4 +1,8 @@
+import datetime
+
 import pytest
+
+from maptap.models import Entry, Round
 
 SAMPLE_EXPORT = """\
 04/06/2026, 20:21 - Steve Risdon created group "Map Tappers"
@@ -26,3 +30,12 @@ Absolutely fucked it with the first one...
 @pytest.fixture
 def sample_export() -> str:
     return SAMPLE_EXPORT
+
+
+def entries_for_days(count: int, start: datetime.date = datetime.date(2026, 6, 15)) -> list[Entry]:
+    """One entry per player per day for `count` consecutive days from `start`."""
+    return [
+        Entry(player, start + datetime.timedelta(days=offset), 900 + offset, (Round(90, "👑"),) * 5)
+        for offset in range(count)
+        for player in ("Finn Risdon", "Daniel Chicot")
+    ]

@@ -11,7 +11,7 @@ from maptap.db import connect
 from maptap.metrics import (
     all_entries,
     combative_win_counts,
-    daily_leaderboard,
+    daily_leaderboard_page,
     daily_win_counts,
     green_jersey_win_counts,
     hero_stats,
@@ -61,10 +61,10 @@ def players(request: Request):
 
 
 @app.get("/days", response_class=HTMLResponse)
-def days(request: Request):
+def days(request: Request, page: int = 1):
     with closing(_conn()) as conn:
         context = {
-            "days": daily_leaderboard(conn),
+            **daily_leaderboard_page(conn, page=page),
             "win_rows": [
                 ("Yellow", daily_win_counts(conn, metric="cumulative")),
                 ("Green", green_jersey_win_counts(conn)),

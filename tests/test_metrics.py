@@ -11,6 +11,7 @@ from maptap.metrics import (
     combative_riders_by_day,
     combative_win_counts,
     daily_leaderboard,
+    daily_leaderboard_page,
     daily_win_counts,
     green_jersey_totals,
     green_jersey_win_counts,
@@ -20,7 +21,7 @@ from maptap.metrics import (
 )
 from maptap.models import Entry, Round
 from maptap.parser import entries_from_text
-from tests.conftest import SAMPLE_EXPORT
+from tests.conftest import SAMPLE_EXPORT, entries_for_days
 
 
 def _conn():
@@ -718,3 +719,39 @@ def test_no_polka_keys_reach_the_templates(rows):
     keys = {key for row in rows(_conn()) for key in row}
     assert keys and not {key for key in keys if "polka" in key}
 
+
+
+def _many_days_conn(count):
+    conn = connect()
+    upsert_entries(conn, entries_for_days(count))
+    return conn
+
+
+@pytest.mark.parametrize(
+    ("page", "expected_page", "newest", "oldest", "count"),
+    [
+        (1, 1, "2026-08-23", "2026-07-25", 30),  # newest 30 of 70 days
+        (2, 2, "2026-07-24", "2026-06-25", 30),
+        (3, 3, "2026-06-24", "2026-06-15", 10),  # the oldest remainder
+        (0, 1, "2026-08-23", "2026-07-25", 30),  # below range clamps to the first page
+        (99, 3, "2026-06-24", "2026-06-15", 10),  # beyond range clamps to the last page
+    ],
+)
+def test_daily_leaderboard_page_slices_newest_first(page, expected_page, newest, oldest, count):
+    result = daily_leaderboard_page(_many_days_conn(70), page=page)
+    dates = [d["game_date"] for d in result["days"]]
+    assert result["page"] == expected_page
+    assert result["pages"] == 3
+    assert result["total_days"] == 70
+    assert (len(dates), dates[0], dates[-1]) == (count, newest, oldest)
+
+
+def test_daily_leaderboard_page_fits_a_short_history_on_one_page():
+    result = daily_leaderboard_page(_conn())
+    assert (result["page"], result["pages"], result["total_days"]) == (1, 1, 3)
+    assert len(result["days"]) == 3
+
+
+def test_daily_leaderboard_page_of_empty_history():
+    result = daily_leaderboard_page(connect())
+    assert result == {"days": [], "page": 1, "pages": 1, "total_days": 0}

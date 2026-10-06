@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from maptap.db import connect, upsert_entries
 from maptap.parser import entries_from_text
-from tests.conftest import SAMPLE_EXPORT
+from tests.conftest import SAMPLE_EXPORT, entries_for_days
 
 
 def _build_db(path):
@@ -443,3 +443,59 @@ def test_no_page_mentions_polka(route, tmp_path, monkeypatch):
     from maptap.app import app
 
     assert "polka" not in TestClient(app).get(route).text.lower()
+
+
+def _many_days_markup(tmp_path, monkeypatch, query=""):
+    db = tmp_path / "maptap.db"
+    conn = connect(str(db))
+    upsert_entries(conn, entries_for_days(70))
+    conn.close()
+    monkeypatch.setenv("MAPTAP_DB", str(db))
+
+    from maptap.app import app
+
+    return TestClient(app).get(f"/days{query}").text
+
+
+def _pager_links(markup):
+    """href → link text for every link inside a pager, as the browser would see them."""
+    links = re.findall(r'<a class="chip pager-link" href="([^"]+)">([^<]+)</a>', markup)
+    return {href: text.strip() for href, text in links}
+
+
+def test_days_shows_only_the_newest_thirty_days_by_default(tmp_path, monkeypatch):
+    markup = _many_days_markup(tmp_path, monkeypatch)
+    assert markup.count("<caption>") == 30
+    assert "<caption>2026-08-23</caption>" in markup
+    assert "<caption>2026-07-25</caption>" in markup
+    assert "2026-07-24" not in markup
+
+
+@pytest.mark.parametrize(
+    ("query", "captions", "earlier", "later"),
+    [
+        ("", 30, "/days?page=2", None),
+        ("?page=2", 30, "/days?page=3", "/days"),
+        ("?page=3", 10, None, "/days?page=2"),
+        ("?page=40", 10, None, "/days?page=2"),  # out of range lands on the last page
+    ],
+)
+def test_days_pager_links_to_earlier_and_later_pages(query, captions, earlier, later, tmp_path, monkeypatch):
+    markup = _many_days_markup(tmp_path, monkeypatch, query)
+    assert markup.count("<caption>") == captions
+    links = _pager_links(markup)
+    hrefs = {text: href for href, text in links.items()}
+    assert hrefs.get("← Earlier") == earlier
+    assert hrefs.get("Later →") == later
+
+
+def test_days_pager_states_the_page_and_date_range(tmp_path, monkeypatch):
+    markup = _many_days_markup(tmp_path, monkeypatch, "?page=2")
+    assert markup.count('<nav class="panel pager"') == 2  # above and below the day cards
+    assert "Page 2 of 3" in markup
+    assert "2026-06-25 to 2026-07-24" in markup
+    assert "70 days played" in markup
+
+
+def test_days_hides_the_pager_when_everything_fits_on_one_page(tmp_path, monkeypatch):
+    assert 'class="panel pager"' not in _days_markup(tmp_path, monkeypatch)

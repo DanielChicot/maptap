@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Days · Map Tappers{% endblock %}
 {% block content %}
+{% macro pager() %}
+{% if pages > 1 %}
+<nav class="panel pager" aria-label="Earlier and later days">
+    {% if page < pages %}<a class="chip pager-link" href="/days?page={{ page + 1 }}">← Earlier</a>{% else %}<span class="chip pager-link disabled" aria-disabled="true">← Earlier</span>{% endif %}
+    <span class="pager-meta">Page {{ page }} of {{ pages }} · {{ days[-1].game_date }} to {{ days[0].game_date }} · {{ total_days }} days played</span>
+    {% if page > 1 %}<a class="chip pager-link" href="{{ '/days' if page == 2 else '/days?page=' ~ (page - 1) }}">Later →</a>{% else %}<span class="chip pager-link disabled" aria-disabled="true">Later →</span>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
 <h2 class="section-head">By day</h2>
-<p class="section-sub">Daily standings, newest first.</p>
+<p class="section-sub">Daily standings, newest first{% if pages > 1 %}, thirty days at a time{% endif %}.</p>
 
 <div class="panel toolbar">
     <span class="chip-label">Daily wins</span>
@@ -20,6 +29,7 @@
     {% endfor %}
 </div>
 
+{{ pager() }}
 <div class="day-grid">
     {% for day in days %}
     <div class="panel table-card">
@@ -52,6 +62,7 @@
     </div>
     {% endfor %}
 </div>
+{{ pager() }}
 {% endblock %}
 {% block scripts %}
 <script src="/static/sort.js"></script>

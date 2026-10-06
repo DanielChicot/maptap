@@ -333,6 +333,21 @@ def daily_leaderboard(conn: sqlite3.Connection, sort: str = "cumulative") -> lis
     return [{"game_date": day, "standings": standings} for day, standings in by_day.items()]
 
 
+DAYS_PER_PAGE = 30
+
+
+def daily_leaderboard_page(conn: sqlite3.Connection, page: int = 1, size: int = DAYS_PER_PAGE) -> dict:
+    """One page of day standings, newest first, with the page count for navigation.
+
+    Out-of-range pages clamp to the nearest real page so stale links still land somewhere useful.
+    """
+    days = daily_leaderboard(conn)
+    pages = max(1, -(-len(days) // size))
+    page = min(max(page, 1), pages)
+    start = (page - 1) * size
+    return {"days": days[start : start + size], "page": page, "pages": pages, "total_days": len(days)}
+
+
 def _best_yellow_between(
     conn: sqlite3.Connection, start: datetime.date, end: datetime.date
 ) -> sqlite3.Row | None:

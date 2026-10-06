@@ -140,6 +140,9 @@ main.wrap { padding-top: 6px; padding-bottom: 60px; }
 .chip.static:hover { color: var(--ink-dim); }
 .chip.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
 .results-meta { margin-left: auto; color: var(--ink-faint); font-size: 13px; }
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-top: 16px; }
+.pager-link.disabled { opacity: 0.4; cursor: default; }
+.pager-meta { color: var(--ink-faint); font-size: 13px; font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: center; flex: 1; }
 
 .table-card { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; }
@@ -176,6 +179,7 @@ tr[aria-expanded="true"] .caret { transform: rotate(90deg); color: var(--accent)
 @media (max-width: 720px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
   .day-grid { grid-template-columns: 1fr; }
+  .pager-meta { flex-basis: 100%; order: -1; }
   .nav-inner { flex-wrap: wrap; height: auto; row-gap: 10px; padding-top: 10px; padding-bottom: 10px; }
   .theme-btn { margin-left: auto; }
   .tabs { order: 3; width: 100%; margin: 0; justify-content: center; }

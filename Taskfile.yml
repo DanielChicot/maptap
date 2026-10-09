@@ -30,13 +30,16 @@ tasks:
 
   extract:
     desc: Extract a local WhatsApp export zip (ZIP, default "Map Tappers.zip" in the current directory)
+    vars:
+      ZIP_PATH:
+        sh: printf '%s' "{{.ZIP}}" | sed "s|^~|$HOME|"
     preconditions:
-      - sh: 'test -f "{{.ZIP}}"'
-        msg: "No export zip at '{{.ZIP}}'. Pass one with ZIP=path/to/export.zip."
+      - sh: 'test -f "{{.ZIP_PATH}}"'
+        msg: "No export zip at '{{.ZIP_PATH}}'. Pass one with ZIP=path/to/export.zip."
     cmds:
       - mkdir -p {{.WORKDIR}}
       - rm -f {{.WORKDIR}}/*.txt
-      - unzip -o "{{.ZIP}}" -d {{.WORKDIR}}
+      - unzip -o "{{.ZIP_PATH}}" -d {{.WORKDIR}}
 
   import:
     desc: Import the extracted chat into the SQLite database

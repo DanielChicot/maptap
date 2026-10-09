@@ -4,6 +4,7 @@ vars:
   REMOTE: 'gdrive:'
   PATTERN: 'Map Tappers'
   WORKDIR: /tmp/maptap-pull
+  ZIP: Map Tappers.zip
   DB: maptap.db
   BRANCH:
     sh: b=$(git branch --show-current); echo "${b:-a detached HEAD}"
@@ -24,7 +25,18 @@ tasks:
         id=$(rclone lsf {{.REMOTE}} --files-only --format "tip" --separator "|" | grep "{{.PATTERN}}" | sort -r | head -1 | cut -d'|' -f2)
         test -n "$id" || { echo "No export matching '{{.PATTERN}}' found in {{.REMOTE}}"; exit 1; }
         rclone backend copyid {{.REMOTE}} "$id" {{.WORKDIR}}/chat.zip
-      - unzip -o {{.WORKDIR}}/chat.zip -d {{.WORKDIR}}
+      - task: extract
+        vars: { ZIP: '{{.WORKDIR}}/chat.zip' }
+
+  extract:
+    desc: Extract a local WhatsApp export zip (ZIP, default "Map Tappers.zip" in the current directory)
+    preconditions:
+      - sh: 'test -f "{{.ZIP}}"'
+        msg: "No export zip at '{{.ZIP}}'. Pass one with ZIP=path/to/export.zip."
+    cmds:
+      - mkdir -p {{.WORKDIR}}
+      - rm -f {{.WORKDIR}}/*.txt
+      - unzip -o "{{.ZIP}}" -d {{.WORKDIR}}
 
   import:
     desc: Import the extracted chat into the SQLite database
@@ -52,5 +64,13 @@ tasks:
     preconditions: *on-main
     cmds:
       - task: fetch
+      - task: import
+      - task: publish
+
+  update-local:
+    desc: Import a local export zip (ZIP, default "Map Tappers.zip") and publish, skipping Google Drive
+    preconditions: *on-main
+    cmds:
+      - task: extract
       - task: import
       - task: publish

@@ -499,3 +499,28 @@ def test_days_pager_states_the_page_and_date_range(tmp_path, monkeypatch):
 
 def test_days_hides_the_pager_when_everything_fits_on_one_page(tmp_path, monkeypatch):
     assert 'class="panel pager"' not in _days_markup(tmp_path, monkeypatch)
+
+
+def _starred_players_by_day(markup):
+    """Player names rendered with an asterisk, keyed by the date of each day card that has one."""
+    starred = {}
+    for card in markup.split("<caption>")[1:]:
+        day = card.split("</caption>", 1)[0]
+        cells = re.findall(r'<td class="txt"><span class="caret"[^>]*>.*?</span>(.*?)</td>', card, re.S)
+        names = [cell.removesuffix("*") for cell in cells if cell.endswith("*")]
+        if names:
+            starred[day] = names
+    return starred
+
+
+@pytest.mark.parametrize(
+    ("asterisked_days", "expected"),
+    [
+        (frozenset(), {}),
+        (frozenset({"2026-06-15"}), {"2026-06-15": ["Finn Risdon"]}),
+        (frozenset({"2026-06-01"}), {}),  # a flagged day with no results stars nobody
+    ],
+)
+def test_days_asterisks_the_winner_on_suspect_days(asterisked_days, expected, tmp_path, monkeypatch):
+    monkeypatch.setattr("maptap.app.ASTERISKED_DAYS", asterisked_days)
+    assert _starred_players_by_day(_days_markup(tmp_path, monkeypatch)) == expected

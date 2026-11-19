@@ -19,6 +19,8 @@ from maptap.metrics import (
 )
 
 _BASE = pathlib.Path(__file__).parent
+# Days whose winner is suspected of cheating; their name gets an asterisk on the days page.
+ASTERISKED_DAYS = frozenset({"2026-11-19"})
 _NUMBER_WORDS = (
     "Zero", "One", "Two", "Three", "Four", "Five", "Six",
     "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve",
@@ -71,6 +73,7 @@ def days(request: Request, page: int = 1):
                 ("Combative", combative_win_counts(conn)),
             ],
             "stats": hero_stats(conn),
+            "asterisked_days": ASTERISKED_DAYS,
             "active": "days",
         }
     return templates.TemplateResponse(request, "days.html", context)
